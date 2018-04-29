@@ -1,0 +1,5 @@
+name: NinCrafts
+version: @version@
+author: Ninjoh
+main: com.github.martijn_heil.nincrafts.NinCrafts
+softdepend: [Cannons]

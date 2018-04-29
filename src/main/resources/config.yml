@@ -1,0 +1,4 @@
+# Uncomment to set custom sea levels
+#seaLevels:
+#  world: 63
+#  another_fancy_world: 66
