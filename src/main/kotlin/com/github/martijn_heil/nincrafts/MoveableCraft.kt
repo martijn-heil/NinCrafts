@@ -19,7 +19,6 @@
 
 package com.github.martijn_heil.nincrafts
 
-import com.github.martijn_heil.nincrafts.Craft
 import org.bukkit.Location
 
 
