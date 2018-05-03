@@ -61,11 +61,11 @@ open class SimpleSurfaceShip(private val plugin: Plugin, blocks: ArrayList<Block
         }
     var isFlooding = false
         private set(value) {
-            if(value) {
+            if(value && value != field) {
                 plugin.logger.info(this.toString() + " has started flooding!")
                 floodTaskId = plugin.server.scheduler.scheduleSyncRepeatingTask(plugin, floodingTask, 0, floodPeriod)
                 if(floodTaskId == -1) throw RuntimeException("Could not schedule flooding task.")
-            } else if(floodTaskId != -1) {
+            } else if(!value && floodTaskId != -1) {
                 plugin.server.scheduler.cancelTask(floodTaskId)
             }
             field = value
@@ -77,7 +77,7 @@ open class SimpleSurfaceShip(private val plugin: Plugin, blocks: ArrayList<Block
     var hasSunk = false
     open var isSinking = false
         set(value) {
-            if(value) {
+            if(value && value != field) {
                 plugin.logger.info(this.toString() + " has started sinking!")
                 isFlooding = false
                 sinkingTaskId = plugin.server.scheduler.scheduleSyncRepeatingTask(plugin, {
@@ -90,7 +90,7 @@ open class SimpleSurfaceShip(private val plugin: Plugin, blocks: ArrayList<Block
                     }
                 }, 0, sinkingPeriod)
                 if(sinkingTaskId == -1) throw RuntimeException("Could not schedule sinking task.")
-            } else {
+            } else if(!value) {
                 if(isSinking && sinkingTaskId != -1) plugin.server.scheduler.cancelTask(sinkingTaskId)
             }
             field = value
