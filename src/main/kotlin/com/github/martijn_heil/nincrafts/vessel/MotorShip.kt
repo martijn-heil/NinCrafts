@@ -33,7 +33,7 @@ import java.io.Closeable
 
 
 class MotorShip(plugin: Plugin, detectionPoint: Location, private val updateInterval: Long) : Ship, Closeable {
-    private var simpleWaterborneCraft: SimpleWaterborneCraft
+    private var simpleSurfaceShip: SimpleSurfaceShip
 
     private val distancePerUpdate: Double
         get() = speed / 60 / 60 * (updateInterval / 20).toDouble()
@@ -146,7 +146,7 @@ class MotorShip(plugin: Plugin, detectionPoint: Location, private val updateInte
             increaseX = Math.round(0.0 + (distancePerUpdate * Math.cos(radians))).toInt()
             increaseZ = Math.round(0.0 - (distancePerUpdate * Math.sin(radians))).toInt()
             field = value
-            simpleWaterborneCraft.heading = value
+            simpleSurfaceShip.heading = value
         }
     var currentlyFacing: Int = -1
 
@@ -156,21 +156,21 @@ class MotorShip(plugin: Plugin, detectionPoint: Location, private val updateInte
         val blocks = detect(detectionPoint, allowedBlocks, 20000)
         val rotationPoint = blocks.first { it.state is Sign && (it.state as Sign).lines[0] == "[RotationPoint]" }.location
 
-        simpleWaterborneCraft = SimpleWaterborneCraft(plugin, blocks, rotationPoint)
+        simpleSurfaceShip = SimpleSurfaceShip(plugin, blocks, rotationPoint)
     }
 
     override var location: Location
-        get() = simpleWaterborneCraft.location
-        set(value) {simpleWaterborneCraft.location = value}
+        get() = simpleSurfaceShip.location
+        set(value) {simpleSurfaceShip.location = value}
     override val onBoardEntities: Collection<Entity>
-        get() = simpleWaterborneCraft.onBoardEntities
+        get() = simpleSurfaceShip.onBoardEntities
 
     override fun rotate(rotation: Rotation) {
-        simpleWaterborneCraft.rotate(rotation)
+        simpleSurfaceShip.rotate(rotation)
     }
 
     override fun close() {
-        simpleWaterborneCraft.close()
+        simpleSurfaceShip.close()
     }
 
     fun update() {

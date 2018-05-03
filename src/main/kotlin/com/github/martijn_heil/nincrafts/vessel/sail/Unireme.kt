@@ -36,7 +36,7 @@ import java.util.*
 import java.util.logging.Logger
 
 
-class Unireme private constructor(plugin: Plugin, logger: Logger, blocks: Collection<Block>, rotationPoint: Location, sails: Collection<SimpleSail>, rudder: SimpleRudder, rowingSign: Sign, rowingDirectionSign: Sign) : SimpleSailingVessel(plugin, logger, blocks, rotationPoint, sails, rudder, rowingSign, rowingDirectionSign) {
+class Unireme private constructor(plugin: Plugin, logger: Logger, blocks: ArrayList<Block>, rotationPoint: Location, sails: Collection<SimpleSail>, rudder: SimpleRudder, rowingSign: Sign, rowingDirectionSign: Sign) : SimpleSailingVessel(plugin, logger, blocks, rotationPoint, sails, rudder, rowingSign, rowingDirectionSign) {
     override var normalMaxSpeed: Int = 7000
 
     private val listener2 = object : Listener {

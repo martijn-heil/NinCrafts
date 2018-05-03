@@ -53,22 +53,19 @@ import com.github.martijn_heil.nincrafts.util.detect
 import com.github.martijn_heil.nincrafts.util.getRotatedLocation
 import com.github.martijn_heil.nincrafts.vessel.HasRudder
 import com.github.martijn_heil.nincrafts.vessel.SimpleRudder
-import com.github.martijn_heil.nincrafts.vessel.SimpleWaterborneCraft
+import com.github.martijn_heil.nincrafts.vessel.SimpleSurfaceShip
 import java.lang.Math.*
 import java.util.*
 import java.util.logging.Logger
 
-/*
-TODO:
-    Fix: Ship filling up with water if under water line.
- */
+
 open class SimpleSailingVessel protected constructor(protected val plugin: Plugin, protected val logger: Logger,
-                                                     blocks: Collection<Block>, rotationPoint: Location,
+                                                     blocks: ArrayList<Block>, rotationPoint: Location,
                                                      override val sails: Collection<SimpleSail>,
                                                      protected val rudder: SimpleRudder,
                                                      protected var rowingSign: Sign,
                                                      protected var rowingDirectionSign: Sign) :
-        SimpleWaterborneCraft(plugin, blocks, rotationPoint), HasSail, HasRudder, AutoCloseable {
+        SimpleSurfaceShip(plugin, blocks, rotationPoint), HasSail, HasRudder, AutoCloseable {
     protected open var rowingSpeed = 1000
     protected open var normalMaxSpeed: Int = 10000                     // in metres per hour
     protected open var speedPerSquareMetreOfSail: Double = 0.0         // in metres per hour
@@ -229,6 +226,13 @@ open class SimpleSailingVessel protected constructor(protected val plugin: Plugi
         }
     var currentlyFacing: Int = -1
 
+    override var isSinking = false
+        set(value) {
+            if(value) this.sails.forEach { it.destroy() }
+            super.isSinking = value
+            field = value
+        }
+
     protected open val listener = object : Listener {
         @EventHandler(ignoreCancelled = true, priority = HIGHEST)
         fun onPlayerInteract(e: PlayerInteractEvent) {
@@ -282,7 +286,7 @@ open class SimpleSailingVessel protected constructor(protected val plugin: Plugi
         }
     }
 
-    fun onChangeCourseCallback(heading: Int): Boolean {
+    private fun onChangeCourseCallback(heading: Int): Boolean {
         try {
             this.heading = heading
         } catch(e: CouldNotMoveCraftException) {
@@ -320,6 +324,7 @@ open class SimpleSailingVessel protected constructor(protected val plugin: Plugi
     }
 
     private fun update() {
+        if(isSinking) return
         val currentMaxSpeed = this.currentMaxSpeed // just cache the value, less recomputing
         if (speed < currentMaxSpeed) { // Should accelerate
             if ((currentMaxSpeed - speed) < accelerationPerUpdate) {
@@ -350,7 +355,7 @@ open class SimpleSailingVessel protected constructor(protected val plugin: Plugi
 
     override fun move(relativeX: Int, relativeY: Int, relativeZ: Int) {
         super.move(relativeX, relativeY, relativeZ)
-        rudder.updateLocation(relativeX, relativeZ)
+        rudder.updateLocation(relativeX, relativeY, relativeZ)
         sails.forEach { it.updateLocation(relativeX, relativeY, relativeZ) }
         rowingSign = world.getBlockAt(rowingSign.x + relativeX, rowingSign.y + relativeY, rowingSign.z + relativeZ).state as Sign
         rowingDirectionSign = world.getBlockAt(rowingDirectionSign.x + relativeX, rowingDirectionSign.y + relativeY, rowingDirectionSign.z + relativeZ).state as Sign

@@ -21,7 +21,6 @@ package com.github.martijn_heil.nincrafts.util
 
 import com.github.martijn_heil.nincrafts.Rotation
 import com.github.martijn_heil.nincrafts.Rotation.CLOCKWISE
-import com.github.martijn_heil.nincrafts.configuredSeaLevel
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.Material.AIR
@@ -30,8 +29,18 @@ import org.bukkit.block.Block
 import org.bukkit.entity.Entity
 import org.bukkit.event.player.PlayerTeleportEvent
 import java.util.*
-import kotlin.collections.ArrayList
 
+fun getAdjactentBlocks(block: Block): Collection<Block> {
+    val list = ArrayList<Block>()
+    for (modX in -1..1) {
+        for(modY in -1..1) {
+            for(modZ in -1..1) {
+                list.add(block.world.getBlockAt(block.x + modX, block.y + modY, block.z + modZ))
+            }
+        }
+    }
+    return list
+}
 
 fun detect(startLocation: Location, allowedBlocks: Collection<Material>, maxSize: Int): ArrayList<Block> {
     val blocks = ArrayList<Block>()
@@ -75,13 +84,13 @@ fun getRotatedLocation(output: Location, rotationPoint: Location, rotation: Rota
 }
 
 
-fun detectAirBlocksBelowWaterLevel(world: World, box: BoundingBox, waterLevel: Int): Collection<Block> {
+fun detectAirBlocksBelowWaterLevel(world: World, box: BoundingBox, waterLevel: Int): ArrayList<Block> {
     val minX = box.minX.toInt()
     val maxX = box.maxX.toInt()
     val minY = box.minY.toInt()
     val minZ = box.minZ.toInt()
     val maxZ = box.maxZ.toInt()
-    if(minY >= waterLevel) return emptyList()
+    if(minY >= waterLevel) return ArrayList<Block>()
 
     val list = ArrayList<Block>()
     for(x in minX..maxX) {

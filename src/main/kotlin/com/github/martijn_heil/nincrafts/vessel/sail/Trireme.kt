@@ -35,7 +35,7 @@ import java.util.*
 import java.util.logging.Logger
 
 
-class Trireme private constructor(plugin: Plugin, logger: Logger, blocks: Collection<Block>, rotationPoint: Location, sails: Collection<SimpleSail>, rudder: SimpleRudder, rowingSign: Sign, rowingDirectionSign: Sign) : SimpleSailingVessel(plugin, logger, blocks, rotationPoint, sails, rudder, rowingSign, rowingDirectionSign) {
+class Trireme private constructor(plugin: Plugin, logger: Logger, blocks: ArrayList<Block>, rotationPoint: Location, sails: Collection<SimpleSail>, rudder: SimpleRudder, rowingSign: Sign, rowingDirectionSign: Sign) : SimpleSailingVessel(plugin, logger, blocks, rotationPoint, sails, rudder, rowingSign, rowingDirectionSign) {
     private val listener2 = object : Listener {
         @EventHandler(ignoreCancelled = true, priority = HIGHEST)
         fun onPlayerInteract(e: PlayerInteractEvent) {

@@ -35,7 +35,7 @@ import java.util.*
 import java.util.logging.Logger
 
 
-class Speedy private constructor(plugin: Plugin, logger: Logger, blocks: Collection<Block>, rotationPoint: Location, sails: Collection<SimpleSail>, rudder: SimpleRudder, rowingSign: Sign, rowingDirectionSign: Sign) : SimpleSailingVessel(plugin, logger, blocks, rotationPoint, sails, rudder, rowingSign, rowingDirectionSign) {
+class Speedy private constructor(plugin: Plugin, logger: Logger, blocks: ArrayList<Block>, rotationPoint: Location, sails: Collection<SimpleSail>, rudder: SimpleRudder, rowingSign: Sign, rowingDirectionSign: Sign) : SimpleSailingVessel(plugin, logger, blocks, rotationPoint, sails, rudder, rowingSign, rowingDirectionSign) {
     override var normalMaxSpeed: Int = 20000
     override var updateInterval: Int = 40
     override val minWindAngle: Int = 30

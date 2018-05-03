@@ -35,22 +35,94 @@ import org.bukkit.block.Block
 import org.bukkit.block.BlockFace
 import org.bukkit.block.BlockState
 import org.bukkit.entity.Player
+import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
+import org.bukkit.event.Listener
+import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.player.PlayerTeleportEvent
 import org.bukkit.material.Attachable
 import org.bukkit.material.Directional
 import org.bukkit.material.Ladder
 import org.bukkit.plugin.Plugin
 import org.bukkit.util.Vector
-import java.util.*
+import java.util.stream.Collectors
 
 
-open class SimpleWaterborneCraft(private val plugin: Plugin, blocks: Collection<Block>, rotationPoint: Location) : SimpleCraft(plugin, blocks, rotationPoint), Ship {
+open class SimpleSurfaceShip(private val plugin: Plugin, blocks: ArrayList<Block>, rotationPoint: Location) : SimpleCraft(plugin, blocks, rotationPoint), Ship {
     override var heading: Int = 0
     protected var waterLevel: Int = 0
+    private var floodTaskId = -1
+    protected open var floodPeriod = 20L
+        set(value) {
+            if(floodTaskId != -1 && isFlooding) {
+                plugin.server.scheduler.cancelTask(floodTaskId)
+                plugin.server.scheduler.scheduleSyncRepeatingTask(plugin, floodingTask, 0, floodPeriod)
+            }
+        }
+    var isFlooding = false
+        private set(value) {
+            if(value) {
+                plugin.logger.info(this.toString() + " has started flooding!")
+                floodTaskId = plugin.server.scheduler.scheduleSyncRepeatingTask(plugin, floodingTask, 0, floodPeriod)
+                if(floodTaskId == -1) throw RuntimeException("Could not schedule flooding task.")
+            } else if(floodTaskId != -1) {
+                plugin.server.scheduler.cancelTask(floodTaskId)
+            }
+            field = value
+        }
+    var leaks = ArrayList<Triple<Int, Int, Int>>()
+
+    protected open var sinkingPeriod = 20L
+    var sinkingTaskId = -1
+    var hasSunk = false
+    open var isSinking = false
+        set(value) {
+            if(value) {
+                plugin.logger.info(this.toString() + " has started sinking!")
+                isFlooding = false
+                sinkingTaskId = plugin.server.scheduler.scheduleSyncRepeatingTask(plugin, {
+                    try {
+                        this.move(0, -1, 0)
+                    } catch(e: CouldNotMoveCraftException) {
+                        hasSunk = true
+                        this.close()
+                        plugin.server.scheduler.cancelTask(sinkingTaskId)
+                    }
+                }, 0, sinkingPeriod)
+                if(sinkingTaskId == -1) throw RuntimeException("Could not schedule sinking task.")
+            } else {
+                if(isSinking && sinkingTaskId != -1) plugin.server.scheduler.cancelTask(sinkingTaskId)
+            }
+            field = value
+        }
+
+    private val floodingTask = Runnable {
+        val airBlocks = this.blocks.parallelStream().filter { it.type == AIR && it.y < waterLevel }.collect(Collectors.toList())
+        if(airBlocks.isEmpty()) {
+            isFlooding = false
+            isSinking = true
+        } else {
+            airBlocks.sortBy { it.y }
+            airBlocks.first().type = WATER
+        }
+    }
 
     protected open fun init() {
         waterLevel = world.configuredSeaLevel
         blocks.addAll(detectAirBlocksBelowWaterLevel(rotationPoint.world, boundingBox, waterLevel))
+
+        plugin.server.pluginManager.registerEvents(object : Listener {
+            @EventHandler(priority = EventPriority.MONITOR)
+            fun onBlockBreak(e: BlockBreakEvent) {
+                if(e.block.y < waterLevel && containsBlock(e.block)) {
+                    leaks.add(Triple(
+                            rotationPoint.blockX - e.block.x,
+                            rotationPoint.blockY - e.block.y,
+                            rotationPoint.blockZ - e.block.z))
+                    isFlooding = true
+                }
+            }
+        }, plugin)
     }
 
     override fun rotate(rotation: Rotation) {
@@ -288,7 +360,6 @@ open class SimpleWaterborneCraft(private val plugin: Plugin, blocks: Collection<
         }
 
         blockProtector.updateAllLocations(world, relativeX, relativeY, relativeZ)
-        waterLevel += relativeY
         massBlockUpdate.notifyClients()
     }
 }

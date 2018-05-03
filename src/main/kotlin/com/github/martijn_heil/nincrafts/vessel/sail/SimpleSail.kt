@@ -32,6 +32,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.plugin.Plugin
 import com.github.martijn_heil.nincrafts.Rotation
+import com.github.martijn_heil.nincrafts.configuredSeaLevel
 import com.github.martijn_heil.nincrafts.util.BlockProtector
 import com.github.martijn_heil.nincrafts.util.detect
 import com.github.martijn_heil.nincrafts.util.getRotatedLocation
@@ -104,6 +105,10 @@ class SimpleSail(private val plugin: Plugin, private var sign: Sign) : Sail, Aut
         blocks = tmpBlocks
         sign = world.getBlockAt(getRotatedLocation(rotationPoint, rotation, sign.location)).state as Sign
         protectedBlocks.forEach { getRotatedLocation(it, rotationPoint, rotation, it) }
+    }
+
+    fun destroy() {
+        blocks.clear()
     }
 
     override fun close() {

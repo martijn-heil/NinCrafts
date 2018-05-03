@@ -112,8 +112,8 @@ class SimpleRudder(private var sign: Sign) : AutoCloseable {
         }
     }
 
-    fun updateLocation(relativeX: Int, relativeZ: Int) {
-        val newLoc = Location(world, (sign.block.x + relativeX).toDouble(), (sign.block.y).toDouble(), (sign.block.z + relativeZ).toDouble())
+    fun updateLocation(relativeX: Int, relativeY: Int, relativeZ: Int) {
+        val newLoc = Location(world, (sign.block.x + relativeX).toDouble(), (sign.block.y + relativeY).toDouble(), (sign.block.z + relativeZ).toDouble())
         sign = newLoc.block.state as Sign
     }
 

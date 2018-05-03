@@ -97,32 +97,12 @@ open class SimpleCraft(private val plugin: Plugin, blocks: Collection<Block>, ro
         }
     }
 
-    open fun containsBlock(block: Block): Boolean {
-        if (!boundingBox.contains(block)) {
-            return false
-        } else {
-            return runBlocking {
-                val parts = 4
-                val channel = Channel<Boolean>(parts)
-                val list = partition(blocks, blocks.size / parts + 1)
+    open fun containsBlock(block: Block) = boundingBox.contains(block) && blocks.parallelStream().anyMatch { it == block }
 
-                val tasks = ArrayList<Job>(4)
-                list.forEach { tasks.add(launch(CommonPool) { channel.send(it.contains(block)) }) }
-                var answerCount = 0
-                channel.consumeEach {
-                    if (!it) {
-                        answerCount++
-                        if (answerCount >= parts) {
-                            channel.close(); return@runBlocking false
-                        }
-                    } else {
-                        channel.close(); tasks.forEach { it.cancel() }; return@runBlocking true
-                    }
-                }
-                return@runBlocking false // shouldn't be reached
-            }
-        }
-    }
+    open fun containsBlockAny(blocks: Collection<Block>) = this.blocks
+            .parallelStream()
+            .anyMatch { val shipBlock = it; blocks.parallelStream()
+                    .anyMatch { boundingBox.contains(it) && it == shipBlock } }
 
     open fun addBlock(block: Block) = {
         blocks.add(block)
