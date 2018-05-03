@@ -25,7 +25,7 @@ import com.github.martijn_heil.nincrafts.SimpleCraft
 import com.github.martijn_heil.nincrafts.configuredSeaLevel
 import com.github.martijn_heil.nincrafts.exception.CouldNotMoveCraftException
 import com.github.martijn_heil.nincrafts.util.MassBlockUpdate
-import com.github.martijn_heil.nincrafts.util.detectAirBlocksBelowSeaLevel
+import com.github.martijn_heil.nincrafts.util.detectAirBlocksBelowWaterLevel
 import com.github.martijn_heil.nincrafts.util.getRotatedLocation
 import com.github.martijn_heil.nincrafts.util.nms.CraftMassBlockUpdate
 import org.bukkit.Bukkit
@@ -44,11 +44,13 @@ import org.bukkit.util.Vector
 import java.util.*
 
 
-open class SimpleShip(private val plugin: Plugin, blocks: Collection<Block>, rotationPoint: Location) : SimpleCraft(plugin, blocks, rotationPoint), Ship {
+open class SimpleWaterborneCraft(private val plugin: Plugin, blocks: Collection<Block>, rotationPoint: Location) : SimpleCraft(plugin, blocks, rotationPoint), Ship {
     override var heading: Int = 0
+    protected var waterLevel: Int = 0
 
     protected open fun init() {
-        blocks.addAll(detectAirBlocksBelowSeaLevel(rotationPoint.world, boundingBox))
+        waterLevel = world.configuredSeaLevel
+        blocks.addAll(detectAirBlocksBelowWaterLevel(rotationPoint.world, boundingBox, waterLevel))
     }
 
     override fun rotate(rotation: Rotation) {
@@ -182,18 +184,17 @@ open class SimpleShip(private val plugin: Plugin, blocks: Collection<Block>, rot
 
         for (s in oldBlockStates) {
             if (!containsBlock(s.block)) {
-                if (s.y < world.configuredSeaLevel) massBlockUpdate.setBlock(s.x, s.y, s.z, WATER) else massBlockUpdate.setBlock(s.x, s.y, s.z, AIR)
+                if (s.y < waterLevel) massBlockUpdate.setBlock(s.x, s.y, s.z, WATER) else massBlockUpdate.setBlock(s.x, s.y, s.z, AIR)
             }
         }
 
         for (s in torches) {
             if (!containsBlock(s.block)) {
-                if (s.y < world.configuredSeaLevel) massBlockUpdate.setBlock(s.x, s.y, s.z, WATER) else massBlockUpdate.setBlock(s.x, s.y, s.z, AIR)
+                if (s.y < waterLevel) massBlockUpdate.setBlock(s.x, s.y, s.z, WATER) else massBlockUpdate.setBlock(s.x, s.y, s.z, AIR)
             }
         }
 
         blockProtector.updateAllLocationsRotated(rotation, rotationPoint)
-
         massBlockUpdate.notifyClients()
     }
 
@@ -276,18 +277,18 @@ open class SimpleShip(private val plugin: Plugin, blocks: Collection<Block>, rot
 
         for (s in oldBlockStates) {
             if (!containsBlock(s.block)) {
-                if (s.y < world.configuredSeaLevel) massBlockUpdate.setBlock(s.x, s.y, s.z, WATER) else massBlockUpdate.setBlock(s.x, s.y, s.z, AIR)
+                if (s.y < waterLevel) massBlockUpdate.setBlock(s.x, s.y, s.z, WATER) else massBlockUpdate.setBlock(s.x, s.y, s.z, AIR)
             }
         }
 
         for (s in torches) {
             if (!containsBlock(s.block)) {
-                if (s.y < world.configuredSeaLevel) massBlockUpdate.setBlock(s.x, s.y, s.z, WATER) else massBlockUpdate.setBlock(s.x, s.y, s.z, AIR)
+                if (s.y < waterLevel) massBlockUpdate.setBlock(s.x, s.y, s.z, WATER) else massBlockUpdate.setBlock(s.x, s.y, s.z, AIR)
             }
         }
 
         blockProtector.updateAllLocations(world, relativeX, relativeY, relativeZ)
-
+        waterLevel += relativeY
         massBlockUpdate.notifyClients()
     }
 }

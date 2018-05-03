@@ -101,7 +101,6 @@ open class SimpleCraft(private val plugin: Plugin, blocks: Collection<Block>, ro
         if (!boundingBox.contains(block)) {
             return false
         } else {
-            return blocks.contains(block)
             return runBlocking {
                 val parts = 4
                 val channel = Channel<Boolean>(parts)

@@ -53,7 +53,7 @@ import com.github.martijn_heil.nincrafts.util.detect
 import com.github.martijn_heil.nincrafts.util.getRotatedLocation
 import com.github.martijn_heil.nincrafts.vessel.HasRudder
 import com.github.martijn_heil.nincrafts.vessel.SimpleRudder
-import com.github.martijn_heil.nincrafts.vessel.SimpleShip
+import com.github.martijn_heil.nincrafts.vessel.SimpleWaterborneCraft
 import java.lang.Math.*
 import java.util.*
 import java.util.logging.Logger
@@ -68,7 +68,7 @@ open class SimpleSailingVessel protected constructor(protected val plugin: Plugi
                                                      protected val rudder: SimpleRudder,
                                                      protected var rowingSign: Sign,
                                                      protected var rowingDirectionSign: Sign) :
-        SimpleShip(plugin, blocks, rotationPoint), HasSail, HasRudder, AutoCloseable {
+        SimpleWaterborneCraft(plugin, blocks, rotationPoint), HasSail, HasRudder, AutoCloseable {
     protected open var rowingSpeed = 1000
     protected open var normalMaxSpeed: Int = 10000                     // in metres per hour
     protected open var speedPerSquareMetreOfSail: Double = 0.0         // in metres per hour

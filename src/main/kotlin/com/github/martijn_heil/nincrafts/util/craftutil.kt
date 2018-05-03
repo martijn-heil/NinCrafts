@@ -75,17 +75,17 @@ fun getRotatedLocation(output: Location, rotationPoint: Location, rotation: Rota
 }
 
 
-fun detectAirBlocksBelowSeaLevel(world: World, box: BoundingBox): Collection<Block> {
+fun detectAirBlocksBelowWaterLevel(world: World, box: BoundingBox, waterLevel: Int): Collection<Block> {
     val minX = box.minX.toInt()
     val maxX = box.maxX.toInt()
     val minY = box.minY.toInt()
     val minZ = box.minZ.toInt()
     val maxZ = box.maxZ.toInt()
-    if(minY >= world.configuredSeaLevel) return emptyList()
+    if(minY >= waterLevel) return emptyList()
 
     val list = ArrayList<Block>()
     for(x in minX..maxX) {
-        for(y in minY until world.configuredSeaLevel) {
+        for(y in minY until waterLevel) {
             for(z in minZ..maxZ) {
                 val block = world.getBlockAt(x, y, z)
                 if(block.type == AIR) list.add(block)
