@@ -108,6 +108,7 @@ class SimpleSail(private val plugin: Plugin, private var sign: Sign) : Sail, Aut
     }
 
     fun destroy() {
+        isHoisted = false
         blocks.clear()
     }
 

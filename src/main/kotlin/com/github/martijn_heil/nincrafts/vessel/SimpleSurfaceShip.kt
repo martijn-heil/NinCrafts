@@ -52,7 +52,7 @@ open class SimpleSurfaceShip(private val plugin: Plugin, blocks: ArrayList<Block
     override var heading: Int = 0
     protected var waterLevel: Int = 0
     private var floodTaskId = -1
-    protected open var floodPeriod = 20L
+    protected open var floodPeriod = 40L
         set(value) {
             if(floodTaskId != -1 && isFlooding) {
                 plugin.server.scheduler.cancelTask(floodTaskId)
