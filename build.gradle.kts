@@ -63,7 +63,6 @@ idea {
 
 dependencies {
     compileOnly("org.bukkit:bukkit:1.12.2-R0.1-SNAPSHOT") { isChanging = true }
-    compileOnly("org.spigotmc:spigot:1.12.2-R0.1-SNAPSHOT") { isChanging = true }
     compileOnly(fileTree("lib") { include("*.jar") })
     shadow(kotlin("stdlib"))
     shadow("org.jetbrains.kotlinx:kotlinx-coroutines-core:0.22.5")
