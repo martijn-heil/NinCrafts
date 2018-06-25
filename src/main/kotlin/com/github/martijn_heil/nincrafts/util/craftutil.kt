@@ -29,6 +29,7 @@ import org.bukkit.block.Block
 import org.bukkit.entity.Entity
 import org.bukkit.event.player.PlayerTeleportEvent
 import java.util.*
+import kotlin.collections.HashSet
 
 fun getAdjactentBlocks(block: Block): Collection<Block> {
     val list = ArrayList<Block>()
@@ -42,19 +43,23 @@ fun getAdjactentBlocks(block: Block): Collection<Block> {
     return list
 }
 
-fun detect(startLocation: Location, allowedBlocks: Collection<Material>, maxSize: Int): ArrayList<Block> {
-    val blocks = ArrayList<Block>()
+fun detectFloodFill(startLocation: Location, allowedBlocks: Collection<Material>, isDisallowedList: Boolean, maxSize: Int): ArrayList<Block> {
+    val blocks = HashSet<Block>()
 
     val s = Stack<Location>()
     s.push(startLocation)
 
-    while(s.count() > 0) {
+    while(!s.isEmpty()) {
         if(blocks.size >= maxSize) throw Exception("Maximum detection size ($maxSize) exceeded.")
 
         val loc = s.pop()
-        if(blocks.contains(loc.block) || !allowedBlocks.contains(loc.block.type)) continue
+        if(isDisallowedList && allowedBlocks.parallelStream().anyMatch { it == loc.block.type } ||
+                !isDisallowedList && !allowedBlocks.parallelStream().anyMatch { it == loc.block.type }) continue
+        //if(blocks.parallelStream().anyMatch { it == loc.block } ||
+        //        !allowedBlocks.parallelStream().anyMatch { it == loc.block.type })
+        //if(blocks.contains(loc.block) || !allowedBlocks.contains(loc.block.type)) continue
 
-        blocks.add(loc.block)
+        if(!blocks.add(loc.block)) continue
 
         for (modX in -1..1) {
             for(modY in -1..1) {
@@ -65,8 +70,8 @@ fun detect(startLocation: Location, allowedBlocks: Collection<Material>, maxSize
         }
     }
 
-    if(blocks.isEmpty()) throw Exception("Could not detect any allowed blocks.")
-    return blocks
+    if(blocks.isEmpty()) throw Exception("Could not detectFloodFill any allowed blocks.")
+    return ArrayList(blocks)
 }
 
 fun getRotatedLocation(rotationPoint: Location, rotation: Rotation, loc: Location): Location {

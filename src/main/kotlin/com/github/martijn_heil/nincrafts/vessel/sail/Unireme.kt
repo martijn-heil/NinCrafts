@@ -30,7 +30,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.plugin.Plugin
 import com.github.martijn_heil.nincrafts.RowingDirection
-import com.github.martijn_heil.nincrafts.util.detect
+import com.github.martijn_heil.nincrafts.util.detectFloodFill
 import com.github.martijn_heil.nincrafts.vessel.SimpleRudder
 import java.util.*
 import java.util.logging.Logger
@@ -71,16 +71,16 @@ class Unireme private constructor(plugin: Plugin, logger: Logger, blocks: ArrayL
                 // Detect vessel
                 try {
                     logger.info("Detecting unireme at " + detectionLoc.x + "x " + detectionLoc.y + "y " + detectionLoc.z + "z")
-                    blocks = detect(detectionLoc, allowedBlocks, maxSize)
+                    blocks = detectFloodFill(detectionLoc, allowedBlocks, false, maxSize)
                 } catch(e: Exception) {
-                    logger.info("Failed to detect sailing vessel: " + (e.message ?: "unknown error"))
+                    logger.info("Failed to detectFloodFill sailing vessel: " + (e.message ?: "unknown error"))
                     throw IllegalStateException(e.message)
                 }
                 val signs = blocks.map { it.state }.filter { it is Sign }.map { it as Sign }
                 val rotationPointSign = signs.find { it.lines[0] == "[RotationPoint]" }
                 if (rotationPointSign == null) {
-                    logger.warning("Could not detect rotation point")
-                    throw IllegalStateException("Could not detect rotation point.")
+                    logger.warning("Could not detectFloodFill rotation point")
+                    throw IllegalStateException("Could not detectFloodFill rotation point.")
                 }
                 val rotationPoint = rotationPointSign.location
 

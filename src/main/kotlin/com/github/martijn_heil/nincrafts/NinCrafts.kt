@@ -19,6 +19,7 @@
 
 package com.github.martijn_heil.nincrafts
 
+import com.github.martijn_heil.nincrafts.space.SimpleSpaceShip
 import com.github.martijn_heil.nincrafts.vessel.sail.*
 import org.bukkit.Bukkit
 import org.bukkit.ChatColor
@@ -133,6 +134,17 @@ class NinCrafts : JavaPlugin() {
                         "Cutter" -> {
                             try {
                                 crafts.add(Cutter.detect(plugin, plugin.logger, e.clickedBlock.location))
+                            } catch(ex: IllegalStateException) {
+                                e.player.sendMessage(ChatColor.RED.toString() + "Error: " + ex.message)
+                            } catch(ex: Exception) {
+                                e.player.sendMessage(ChatColor.RED.toString() + "An internal server error occurred." + ex.message)
+                                ex.printStackTrace()
+                            }
+                        }
+
+                        "SpaceShip" -> {
+                            try {
+                                crafts.add(SimpleSpaceShip.detect(plugin, plugin.logger, e.clickedBlock.location))
                             } catch(ex: IllegalStateException) {
                                 e.player.sendMessage(ChatColor.RED.toString() + "Error: " + ex.message)
                             } catch(ex: Exception) {

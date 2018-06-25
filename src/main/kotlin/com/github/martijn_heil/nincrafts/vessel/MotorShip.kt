@@ -28,7 +28,7 @@ import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import com.github.martijn_heil.nincrafts.Rotation
 import com.github.martijn_heil.nincrafts.exception.CouldNotMoveCraftException
-import com.github.martijn_heil.nincrafts.util.detect
+import com.github.martijn_heil.nincrafts.util.detectFloodFill
 import java.io.Closeable
 
 
@@ -153,7 +153,7 @@ class MotorShip(plugin: Plugin, detectionPoint: Location, private val updateInte
     init {
         val allowedBlocks: Collection<Material> = Material.values().filter { it != Material.AIR && it != Material.WATER &&
                 it != Material.STATIONARY_WATER && it != Material.LAVA && it != Material.STATIONARY_LAVA }
-        val blocks = detect(detectionPoint, allowedBlocks, 20000)
+        val blocks = detectFloodFill(detectionPoint, allowedBlocks, false, 20000)
         val rotationPoint = blocks.first { it.state is Sign && (it.state as Sign).lines[0] == "[RotationPoint]" }.location
 
         simpleSurfaceShip = SimpleSurfaceShip(plugin, blocks, rotationPoint)

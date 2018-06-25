@@ -187,7 +187,7 @@ open class SimpleCraft(private val plugin: Plugin, blocks: Collection<Block>, ro
         val onBoardEntities = onBoardEntities
         var cannons: ArrayList<Any>? = null
         if (NinCrafts.cannonsAPI != null) {
-            cannons = ArrayList() // TODO only detect cannons when detecting ship, saves time
+            cannons = ArrayList() // TODO only detectFloodFill cannons when detecting ship, saves time
             val cannonsAPI = NinCrafts.cannonsAPI as at.pavlov.cannons.API.CannonsAPI
             onBoardEntities
                     .filter { it is Player }
@@ -284,7 +284,7 @@ open class SimpleCraft(private val plugin: Plugin, blocks: Collection<Block>, ro
         val onBoardEntities = onBoardEntities
         var cannons: ArrayList<Any>? = null
         if (NinCrafts.cannonsAPI != null) {
-            cannons = ArrayList() // TODO only detect cannons when detecting ship, saves time
+            cannons = ArrayList() // TODO only detectFloodFill cannons when detecting ship, saves time
             val cannonsAPI = NinCrafts.cannonsAPI as at.pavlov.cannons.API.CannonsAPI
             onBoardEntities
                     .filter { it is Player }

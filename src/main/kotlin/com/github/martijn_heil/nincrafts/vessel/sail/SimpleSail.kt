@@ -32,9 +32,8 @@ import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.plugin.Plugin
 import com.github.martijn_heil.nincrafts.Rotation
-import com.github.martijn_heil.nincrafts.configuredSeaLevel
 import com.github.martijn_heil.nincrafts.util.BlockProtector
-import com.github.martijn_heil.nincrafts.util.detect
+import com.github.martijn_heil.nincrafts.util.detectFloodFill
 import com.github.martijn_heil.nincrafts.util.getRotatedLocation
 import java.util.*
 
@@ -70,9 +69,9 @@ class SimpleSail(private val plugin: Plugin, private var sign: Sign) : Sail, Aut
 
     init {
         try {
-            blocks = ArrayList(detect(Location(sign.location.world, sign.location.x, sign.location.y - 1, sign.location.z ), listOf(Material.WOOL), 500))
+            blocks = ArrayList(detectFloodFill(Location(sign.location.world, sign.location.x, sign.location.y - 1, sign.location.z ), listOf(Material.WOOL), false, 500))
         } catch(ex: Exception) {
-            throw IllegalStateException("Could not detect sail (sign at " + sign.location.x + "x " + sign.location.y + " y" + sign.location.z + " z): " + ex.message)
+            throw IllegalStateException("Could not detectFloodFill sail (sign at " + sign.location.x + "x " + sign.location.y + " y" + sign.location.z + " z): " + ex.message)
         }
 
         Bukkit.getPluginManager().registerEvents(listener, plugin)
