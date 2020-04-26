@@ -58,7 +58,8 @@ class SimpleSail(private val plugin: Plugin, private var sign: Sign) : Sail, Aut
         set(value) {
             if(value != field) {
                 if(value) {
-                    blocks.forEach { it.type = Material.WOOL }
+                    // TODO fix this shit
+                    blocks.forEach { it.type = Material.LEGACY_WOOL }
                 } else {
                     blocks.forEach { it.type = Material.AIR }
                 }
@@ -69,7 +70,8 @@ class SimpleSail(private val plugin: Plugin, private var sign: Sign) : Sail, Aut
 
     init {
         try {
-            blocks = ArrayList(detectFloodFill(Location(sign.location.world, sign.location.x, sign.location.y - 1, sign.location.z ), listOf(Material.WOOL), false, 500))
+            // TODO fix this shit
+            blocks = ArrayList(detectFloodFill(Location(sign.location.world, sign.location.x, sign.location.y - 1, sign.location.z ), listOf(Material.LEGACY_WOOL), false, 500))
         } catch(ex: Exception) {
             throw IllegalStateException("Could not detectFloodFill sail (sign at " + sign.location.x + "x " + sign.location.y + " y" + sign.location.z + " z): " + ex.message)
         }

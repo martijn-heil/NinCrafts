@@ -109,7 +109,7 @@ open class SimpleSurfaceShip(private val plugin: Plugin, blocks: ArrayList<Block
 
     protected open fun init() {
         waterLevel = world.configuredSeaLevel
-        blocks.addAll(detectAirBlocksBelowWaterLevel(rotationPoint.world, boundingBox, waterLevel))
+        blocks.addAll(detectAirBlocksBelowWaterLevel(rotationPoint.world!!, boundingBox, waterLevel))
 
         plugin.server.pluginManager.registerEvents(object : Listener {
             @EventHandler(priority = EventPriority.MONITOR)

@@ -152,7 +152,7 @@ class MotorShip(plugin: Plugin, detectionPoint: Location, private val updateInte
 
     init {
         val allowedBlocks: Collection<Material> = Material.values().filter { it != Material.AIR && it != Material.WATER &&
-                it != Material.STATIONARY_WATER && it != Material.LAVA && it != Material.STATIONARY_LAVA }
+                it != Material.LEGACY_STATIONARY_WATER && it != Material.LAVA && it != Material.LEGACY_STATIONARY_LAVA }
         val blocks = detectFloodFill(detectionPoint, allowedBlocks, false, 20000)
         val rotationPoint = blocks.first { it.state is Sign && (it.state as Sign).lines[0] == "[RotationPoint]" }.location
 

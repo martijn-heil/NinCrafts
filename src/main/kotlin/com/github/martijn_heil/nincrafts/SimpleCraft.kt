@@ -62,7 +62,7 @@ open class SimpleCraft(private val plugin: Plugin, blocks: Collection<Block>, ro
             }
         }
 
-    protected open val world: World get() = location.world
+    protected open val world: World get() = location.world!!
     protected open var blocks: ArrayList<Block> = ArrayList(blocks)
 
     override val onBoardEntities: List<Entity>

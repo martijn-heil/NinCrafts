@@ -382,7 +382,7 @@ open class SimpleSailingVessel protected constructor(protected val plugin: Plugi
             val sails: MutableCollection<SimpleSail> = ArrayList()
             try {
                 val maxSize = 5000
-                val allowedBlocks: Collection<Material> = Material.values().filter { it != AIR && it != WATER && it != STATIONARY_WATER && it != LAVA && it != STATIONARY_LAVA }
+                val allowedBlocks: Collection<Material> = Material.values().filter { it != AIR && it != WATER && it != LEGACY_STATIONARY_WATER && it != LAVA && it != LEGACY_STATIONARY_LAVA }
                 val blocks: Collection<Block>
                 // Detect vessel
                 try {

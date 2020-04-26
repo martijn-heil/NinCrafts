@@ -55,12 +55,12 @@ class SimpleSpaceShip(val plugin: Plugin, blocks: Collection<Block>,
 
     var isMoving
         get() = movingSign.lines[1].toBoolean()
-        set(value) { movingSign.setLine(1, value.toString()) }
+        set(value) { movingSign.setLine(1, value.toString()); movingSign.update(true, false) }
 
     override fun rotate(rotation: Rotation) {
         super.rotate(rotation)
         rudder.updateLocationRotated(rotationPoint, rotation)
-        movingSign = world.getBlockAt(getRotatedLocation(rotationPoint, rotation, movingSign.location)) as Sign
+        movingSign = world.getBlockAt(getRotatedLocation(rotationPoint, rotation, movingSign.location)).state as Sign
     }
 
     override fun move(relativeX: Int, relativeY: Int, relativeZ: Int) {
@@ -166,8 +166,8 @@ class SimpleSpaceShip(val plugin: Plugin, blocks: Collection<Block>,
         fun onPlayerInteract(e: PlayerInteractEvent) {
             if(e.clickedBlock == null) return
 
-            val state = e.clickedBlock.state
-            if (state is Sign && state.lines[0] == "[Craft]" && containsBlock(e.clickedBlock)) {
+            val state = e.clickedBlock!!.state
+            if (state is Sign && state.lines[0] == "[Craft]" && containsBlock(e.clickedBlock!!)) {
                 e.isCancelled = true
             }
         }
@@ -270,9 +270,9 @@ class SimpleSpaceShip(val plugin: Plugin, blocks: Collection<Block>,
                 val disallowedBlocks = listOf(
                         Material.AIR,
                         Material.WATER,
-                        Material.STATIONARY_WATER,
+                        Material.LEGACY_STATIONARY_WATER,
                         Material.LAVA,
-                        Material.STATIONARY_LAVA
+                        Material.LEGACY_STATIONARY_LAVA
                 )
                 val blocks: Collection<Block>
                 // Detect vessel

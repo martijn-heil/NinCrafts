@@ -44,8 +44,8 @@ class Unireme private constructor(plugin: Plugin, logger: Logger, blocks: ArrayL
         fun onPlayerInteract(e: PlayerInteractEvent) {
             if(e.clickedBlock == null) return
 
-            val state = e.clickedBlock.state
-            if (state is Sign && state.lines[0] == "[Craft]" && containsBlock(e.clickedBlock)) {
+            val state = e.clickedBlock!!.state
+            if (state is Sign && state.lines[0] == "[Craft]" && containsBlock(e.clickedBlock!!)) {
                 e.isCancelled = true
             }
         }
@@ -66,7 +66,7 @@ class Unireme private constructor(plugin: Plugin, logger: Logger, blocks: ArrayL
             val sails: MutableCollection<SimpleSail> = ArrayList()
             try {
                 val maxSize = 5000
-                val allowedBlocks: Collection<Material> = Material.values().filter { it != Material.AIR && it != Material.WATER && it != Material.STATIONARY_WATER && it != Material.LAVA && it != Material.STATIONARY_LAVA }
+                val allowedBlocks: Collection<Material> = Material.values().filter { it != Material.AIR && it != Material.WATER && it != Material.LEGACY_STATIONARY_WATER && it != Material.LAVA && it != Material.LEGACY_STATIONARY_LAVA }
                 val blocks: Collection<Block>
                 // Detect vessel
                 try {

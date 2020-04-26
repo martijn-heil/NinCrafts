@@ -1,15 +1,14 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.apache.tools.ant.filters.ReplaceTokens
 import org.gradle.api.JavaVersion.VERSION_1_8
-import java.net.URI
-import org.apache.tools.ant.filters.*
 import org.gradle.plugins.ide.idea.model.IdeaLanguageLevel
-import org.jetbrains.kotlin.gradle.dsl.Coroutines
+import java.net.URI
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     `java-gradle-plugin`
-    kotlin("jvm") version "1.2.40"
-    id("com.github.johnrengelman.shadow") version "2.0.3"
+    kotlin("jvm") version "1.3.31"
+    id("com.github.johnrengelman.shadow") version "4.0.2"
     idea
 }
 
@@ -28,11 +27,11 @@ java {
     targetCompatibility = VERSION_1_8
 }
 
-kotlin {
-    this.experimental.coroutines = Coroutines.ENABLE
-}
+//kotlin {
+//    this.experimental.coroutines = Coroutines.ENABLE
+//}
 
-defaultTasks = listOf("shadowJar")
+defaultTasks = mutableListOf("shadowJar")
 
 tasks {
     withType<ProcessResources> {
@@ -40,7 +39,7 @@ tasks {
     }
     withType<ShadowJar> {
         this.classifier = null
-        this.configurations = listOf(project.configurations.shadow)
+        this.configurations = mutableListOf(project.configurations.shadow)
     }
 }
 
@@ -62,10 +61,18 @@ idea {
 }
 
 dependencies {
-    compileOnly("org.bukkit:bukkit:1.12.2-R0.1-SNAPSHOT") { isChanging = true }
+    compileOnly("org.bukkit:bukkit:1.14.2-R0.1-SNAPSHOT") { isChanging = true }
     compileOnly(fileTree("lib") { include("*.jar") })
-    shadow(kotlin("stdlib"))
-    shadow("org.jetbrains.kotlinx:kotlinx-coroutines-core:0.22.5")
     shadow("com.google.guava:guava:24.1-jre")
     shadow("org.apache.commons:commons-collections4:4.1")
+    compile(kotlin("stdlib"))
+    compile(kotlin("stdlib-jdk8"))
+}
+val compileKotlin: KotlinCompile by tasks
+compileKotlin.kotlinOptions {
+    jvmTarget = "1.8"
+}
+val compileTestKotlin: KotlinCompile by tasks
+compileTestKotlin.kotlinOptions {
+    jvmTarget = "1.8"
 }

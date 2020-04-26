@@ -19,14 +19,14 @@
 
 package com.github.martijn_heil.nincrafts.util.nms
 
-import net.minecraft.server.v1_12_R1.BlockPosition
+import net.minecraft.server.v1_13_R2.BlockPosition
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.block.BlockFace
 import org.bukkit.block.BlockState
 import org.bukkit.block.Sign
-import org.bukkit.craftbukkit.v1_12_R1.CraftWorld
+import org.bukkit.craftbukkit.v1_13_R2.CraftWorld
 import org.bukkit.material.Button
 import org.bukkit.plugin.Plugin
 import org.bukkit.scheduler.BukkitTask
@@ -234,7 +234,7 @@ private fun setBlockFast(world: World, x: Int, y: Int, z: Int, blockId: Int, dat
     val w = (world as CraftWorld).handle
     val bp = BlockPosition(x, y, z)
     val combined = (data.toInt() shl 12) or blockId
-    val ibd = net.minecraft.server.v1_12_R1.Block.getByCombinedId(combined)
+    val ibd = net.minecraft.server.v1_13_R2.Block.getByCombinedId(combined)
     return w.setTypeAndData(bp, ibd, 0x02) // World#setBlockState/setTypeAndData(BlockPos, IBlockState/IBlockData, flags)
 }
 

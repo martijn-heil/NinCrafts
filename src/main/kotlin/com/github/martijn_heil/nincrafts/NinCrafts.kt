@@ -35,6 +35,24 @@ import org.bukkit.plugin.java.JavaPlugin
 import java.io.Closeable
 import java.util.*
 
+
+val signMaterials = listOf(
+        Material.SIGN,
+        Material.WALL_SIGN
+//  Material.ACACIA_SIGN,
+//  Material.ACACIA_WALL_SIGN,
+//  Material.BIRCH_SIGN,
+//  Material.BIRCH_WALL_SIGN,
+//  Material.DARK_OAK_SIGN,
+//  Material.DARK_OAK_WALL_SIGN,
+//  Material.JUNGLE_SIGN,
+//  Material.JUNGLE_WALL_SIGN,
+//  Material.OAK_SIGN,
+//  Material.OAK_WALL_SIGN,
+//  Material.SPRUCE_SIGN,
+//  Material.SPRUCE_WALL_SIGN
+)
+
 class NinCrafts : JavaPlugin() {
     private val random = Random()
     var windFrom: Int = 0 // Wind coming from x degrees
@@ -76,11 +94,9 @@ class NinCrafts : JavaPlugin() {
         private object CraftManagerListener : Listener {
             @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
             fun onPlayerInteract(e: PlayerInteractEvent) {
-                if (e.clickedBlock != null &&
-                        (e.clickedBlock.type == Material.SIGN ||
-                                e.clickedBlock.type == Material.SIGN_POST ||
-                                e.clickedBlock.type == Material.WALL_SIGN) && (e.clickedBlock.state as Sign).lines[0] == "[Craft]") {
-                    val type = (e.clickedBlock.state as Sign).lines[1]
+                if (e.clickedBlock != null && signMaterials.e.clickedBlock!!.type) &&
+                        (e.clickedBlock!!.state as Sign).lines[0] == "[Craft]") {
+                    val type = (e.clickedBlock!!.state as Sign).lines[1]
                     if (type == "") {
                         e.player.sendMessage(ChatColor.RED.toString() + "Error: Craft type not specified."); return
                     }
@@ -89,7 +105,7 @@ class NinCrafts : JavaPlugin() {
                     when (type) {
                         "Trireme" -> {
                             try {
-                                crafts.add(Trireme.detect(plugin, plugin.logger, e.clickedBlock.location))
+                                crafts.add(Trireme.detect(plugin, plugin.logger, e.clickedBlock!!.location))
                             } catch(ex: IllegalStateException) {
                                 e.player.sendMessage(ChatColor.RED.toString() + "Error: " + ex.message)
                             } catch(ex: Exception) {
@@ -100,7 +116,7 @@ class NinCrafts : JavaPlugin() {
 
                         "Unireme" -> {
                             try {
-                                crafts.add(Unireme.detect(plugin, plugin.logger, e.clickedBlock.location))
+                                crafts.add(Unireme.detect(plugin, plugin.logger, e.clickedBlock!!.location))
                             } catch(ex: IllegalStateException) {
                                 e.player.sendMessage(ChatColor.RED.toString() + "Error: " + ex.message)
                             } catch(ex: Exception) {
@@ -111,7 +127,7 @@ class NinCrafts : JavaPlugin() {
 
                         "Count" -> {
                             try {
-                                crafts.add(Count.detect(plugin, plugin.logger, e.clickedBlock.location))
+                                crafts.add(Count.detect(plugin, plugin.logger, e.clickedBlock!!.location))
                             } catch(ex: IllegalStateException) {
                                 e.player.sendMessage(ChatColor.RED.toString() + "Error: " + ex.message)
                             } catch(ex: Exception) {
@@ -122,7 +138,7 @@ class NinCrafts : JavaPlugin() {
 
                         "Speedy" -> {
                             try {
-                                crafts.add(Speedy.detect(plugin, plugin.logger, e.clickedBlock.location))
+                                crafts.add(Speedy.detect(plugin, plugin.logger, e.clickedBlock!!.location))
                             } catch(ex: IllegalStateException) {
                                 e.player.sendMessage(ChatColor.RED.toString() + "Error: " + ex.message)
                             } catch(ex: Exception) {
@@ -133,7 +149,7 @@ class NinCrafts : JavaPlugin() {
 
                         "Cutter" -> {
                             try {
-                                crafts.add(Cutter.detect(plugin, plugin.logger, e.clickedBlock.location))
+                                crafts.add(Cutter.detect(plugin, plugin.logger, e.clickedBlock!!.location))
                             } catch(ex: IllegalStateException) {
                                 e.player.sendMessage(ChatColor.RED.toString() + "Error: " + ex.message)
                             } catch(ex: Exception) {
@@ -144,7 +160,7 @@ class NinCrafts : JavaPlugin() {
 
                         "SpaceShip" -> {
                             try {
-                                crafts.add(SimpleSpaceShip.detect(plugin, plugin.logger, e.clickedBlock.location))
+                                crafts.add(SimpleSpaceShip.detect(plugin, plugin.logger, e.clickedBlock!!.location))
                             } catch(ex: IllegalStateException) {
                                 e.player.sendMessage(ChatColor.RED.toString() + "Error: " + ex.message)
                             } catch(ex: Exception) {
