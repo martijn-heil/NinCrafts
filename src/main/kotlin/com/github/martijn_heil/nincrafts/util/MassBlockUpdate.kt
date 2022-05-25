@@ -21,6 +21,7 @@ package com.github.martijn_heil.nincrafts.util
 
 import org.bukkit.Material
 import org.bukkit.block.BlockState
+import org.bukkit.block.data.BlockData
 import java.util.concurrent.TimeUnit
 
 interface MassBlockUpdate {
@@ -74,25 +75,7 @@ interface MassBlockUpdate {
      * *
      * @return whether the block was actually changed
      */
-    fun setBlock(x: Int, y: Int, z: Int, materialId: Int): Boolean
-
-    /**
-     * Make a fast block change at the given coordinates.  Clients will
-     * not see this change until [.notifyClients] is called.
-
-     * @param x X-coordinate of the block
-     * *
-     * @param y Y-coordinate of the block
-     * *
-     * @param z Z-coordinate of the block
-     * *
-     * @param materialId the new material ID for the block
-     * *
-     * @param data the new block data
-     * *
-     * @return whether the block was actually changed
-     */
-    fun setBlock(x: Int, y: Int, z: Int, materialId: Int, data: Int): Boolean
+    fun setBlock(x: Int, y: Int, z: Int, data: BlockData): Boolean
 
     fun setBlockState(x: Int, y: Int, z:Int, state: BlockState): Boolean
 

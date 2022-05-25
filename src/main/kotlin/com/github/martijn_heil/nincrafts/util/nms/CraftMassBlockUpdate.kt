@@ -19,25 +19,29 @@
 
 package com.github.martijn_heil.nincrafts.util.nms
 
-import net.minecraft.server.v1_13_R2.BlockPosition
+import com.github.martijn_heil.nincrafts.util.MassBlockUpdate
+import net.minecraft.core.BlockPos
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.block.BlockFace
 import org.bukkit.block.BlockState
 import org.bukkit.block.Sign
-import org.bukkit.craftbukkit.v1_13_R2.CraftWorld
+import org.bukkit.block.data.BlockData
+import org.bukkit.craftbukkit.v1_18_R2.CraftWorld
+import org.bukkit.craftbukkit.v1_18_R2.block.data.CraftBlockData
 import org.bukkit.material.Button
 import org.bukkit.plugin.Plugin
 import org.bukkit.scheduler.BukkitTask
-import com.github.martijn_heil.nincrafts.util.MassBlockUpdate
 import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.math.max
+import kotlin.math.min
 
 
 class CraftMassBlockUpdate(private val plugin: Plugin, private val world: World) : MassBlockUpdate {
     override var relightingStrategy: MassBlockUpdate.RelightingStrategy = MassBlockUpdate.RelightingStrategy.IMMEDIATE
-    private var deferredBlocks: Queue<DeferredBlock> = ArrayDeque<DeferredBlock>()
+    private var deferredBlocks: Queue<DeferredBlock> = ArrayDeque()
     private var relightTask: BukkitTask? = null
     private var maxRelightTimePerTick = TimeUnit.NANOSECONDS.convert(1, TimeUnit.MILLISECONDS)
 
@@ -54,15 +58,14 @@ class CraftMassBlockUpdate(private val plugin: Plugin, private val world: World)
             state.data = stateData
         }
 
-        val res = setBlock(x, y, z, state.typeId, state.rawData.toInt())
+        val res = setBlock(x, y, z, state.blockData)
         if(!res) return false
         val newBlock = world.getBlockAt(x, y, z)
 
         if(state is Sign) {
             val toSign = newBlock.state as Sign
-            val fromSign = state
-            for (i in 0..fromSign.lines.size-1) {
-                toSign.setLine(i, fromSign.getLine(i))
+            for (i in state.lines.indices) {
+                toSign.setLine(i, state.getLine(i))
             }
             toSign.update(true, false)
         }
@@ -76,10 +79,9 @@ class CraftMassBlockUpdate(private val plugin: Plugin, private val world: World)
         return true
     }
 
-    override fun setBlock(x: Int, y: Int, z: Int, material: Material) = setBlock(x, y, z, material.id)
-    override fun setBlock(x: Int, y: Int, z: Int, blockId: Int) = setBlock(x, y, z, blockId, 0)
+    override fun setBlock(x: Int, y: Int, z: Int, material: Material) = setBlock(x, y, z, material.createBlockData())
 
-    override fun setBlock(x: Int, y: Int, z: Int, blockId: Int, data: Int): Boolean {
+    override fun setBlock(x: Int, y: Int, z: Int, data: BlockData): Boolean {
 //        val b = world.getBlockAt(x, y, z)
 //        val state = b.state
 //        state.type = Material.getMaterial(blockId)
@@ -87,17 +89,18 @@ class CraftMassBlockUpdate(private val plugin: Plugin, private val world: World)
 //        state.update(true, false)
 //        return true
 
-        minX = Math.min(minX, x)
-        minZ = Math.min(minZ, z)
-        maxX = Math.max(maxX, x)
-        maxZ = Math.max(maxZ, z)
+        minX = min(minX, x)
+        minZ = min(minZ, z)
+        maxX = max(maxX, x)
+        maxZ = max(maxZ, z)
 
         blocksModified++
-        val oldBlockId = world.getBlockTypeIdAt(x, y, z)
-        val res = setBlockFast(world, x, y, z, blockId, data.toByte())
+        val oldBlockId = world.getBlockAt(x, y, z).type.id
+        val res = setBlockFast(world, x, y, z, data)
 
         if (relightingStrategy != MassBlockUpdate.RelightingStrategy.NEVER) {
-            if (getBlockLightBlocking(oldBlockId) != getBlockLightBlocking(blockId) || getBlockLightEmission(oldBlockId) != getBlockLightEmission(blockId)) {
+            if (getBlockLightBlocking(data) != getBlockLightBlocking(data) ||
+                getBlockLightEmission(data) != getBlockLightEmission(data)) {
                 // lighting or light blocking by this block has changed; force a recalculation
                 if (relightingStrategy == MassBlockUpdate.RelightingStrategy.IMMEDIATE) {
                     recalculateBlockLighting(world, x, y, z)
@@ -230,15 +233,20 @@ class CraftMassBlockUpdate(private val plugin: Plugin, private val world: World)
     }
 }
 
-private fun setBlockFast(world: World, x: Int, y: Int, z: Int, blockId: Int, data: Byte): Boolean {
+private fun setBlockFast(world: World, x: Int, y: Int, z: Int, data: BlockData): Boolean {
     val w = (world as CraftWorld).handle
-    val bp = BlockPosition(x, y, z)
-    val combined = (data.toInt() shl 12) or blockId
-    val ibd = net.minecraft.server.v1_13_R2.Block.getByCombinedId(combined)
-    return w.setTypeAndData(bp, ibd, 0x02) // World#setBlockState/setTypeAndData(BlockPos, IBlockState/IBlockData, flags)
+    val bp = BlockPos(x, y, z)
+    val bs = (data as CraftBlockData).state
+
+    var flags = 0
+    flags = flags or 1      // Kinda unclear. Prevents blockUpdated() from being called.
+    flags = flags or 16     // Don't update neighbour shapes. See net.minecraft.world.level.Level:629
+    flags = flags or 128    // Don't recalculate light. See net.minecraft.world.level.Level:550
+
+    return w.setBlock(bp, bs, flags)
 }
 
-private fun getBlockLightBlocking(blockId: Int): Int {
+private fun getBlockLightBlocking(data: BlockData): Int {
     throw UnsupportedOperationException()
 }
 
@@ -246,7 +254,7 @@ private fun recalculateBlockLighting(world: World, x: Int, y: Int, z: Int) {
     throw UnsupportedOperationException()
 }
 
-private fun getBlockLightEmission(blockId: Int): Int {
+private fun getBlockLightEmission(data: BlockData): Int {
     throw UnsupportedOperationException()
 }
 

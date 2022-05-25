@@ -25,13 +25,6 @@ import com.github.martijn_heil.nincrafts.util.BoundingBox
 import com.github.martijn_heil.nincrafts.util.MassBlockUpdate
 import com.github.martijn_heil.nincrafts.util.getRotatedLocation
 import com.github.martijn_heil.nincrafts.util.nms.CraftMassBlockUpdate
-import kotlinx.coroutines.experimental.CommonPool
-import kotlinx.coroutines.experimental.Job
-import kotlinx.coroutines.experimental.channels.Channel
-import kotlinx.coroutines.experimental.channels.consumeEach
-import kotlinx.coroutines.experimental.launch
-import kotlinx.coroutines.experimental.runBlocking
-import org.apache.commons.collections4.ListUtils.partition
 import org.bukkit.Location
 import org.bukkit.Material.*
 import org.bukkit.World

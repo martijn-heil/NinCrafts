@@ -37,20 +37,18 @@ import java.util.*
 
 
 val signMaterials = listOf(
-        Material.SIGN,
-        Material.WALL_SIGN
-//  Material.ACACIA_SIGN,
-//  Material.ACACIA_WALL_SIGN,
-//  Material.BIRCH_SIGN,
-//  Material.BIRCH_WALL_SIGN,
-//  Material.DARK_OAK_SIGN,
-//  Material.DARK_OAK_WALL_SIGN,
-//  Material.JUNGLE_SIGN,
-//  Material.JUNGLE_WALL_SIGN,
-//  Material.OAK_SIGN,
-//  Material.OAK_WALL_SIGN,
-//  Material.SPRUCE_SIGN,
-//  Material.SPRUCE_WALL_SIGN
+    Material.ACACIA_SIGN,
+    Material.ACACIA_WALL_SIGN,
+    Material.BIRCH_SIGN,
+    Material.BIRCH_WALL_SIGN,
+    Material.DARK_OAK_SIGN,
+    Material.DARK_OAK_WALL_SIGN,
+    Material.JUNGLE_SIGN,
+    Material.JUNGLE_WALL_SIGN,
+    Material.OAK_SIGN,
+    Material.OAK_WALL_SIGN,
+    Material.SPRUCE_SIGN,
+    Material.SPRUCE_WALL_SIGN
 )
 
 class NinCrafts : JavaPlugin() {
@@ -94,7 +92,7 @@ class NinCrafts : JavaPlugin() {
         private object CraftManagerListener : Listener {
             @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
             fun onPlayerInteract(e: PlayerInteractEvent) {
-                if (e.clickedBlock != null && signMaterials.e.clickedBlock!!.type) &&
+                if (e.clickedBlock != null && signMaterials.contains(e.clickedBlock!!.type) &&
                         (e.clickedBlock!!.state as Sign).lines[0] == "[Craft]") {
                     val type = (e.clickedBlock!!.state as Sign).lines[1]
                     if (type == "") {
