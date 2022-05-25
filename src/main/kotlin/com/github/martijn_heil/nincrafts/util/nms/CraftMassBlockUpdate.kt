@@ -28,9 +28,11 @@ import org.bukkit.block.BlockFace
 import org.bukkit.block.BlockState
 import org.bukkit.block.Sign
 import org.bukkit.block.data.BlockData
+import org.bukkit.block.data.Powerable
 import org.bukkit.craftbukkit.v1_18_R2.CraftWorld
 import org.bukkit.craftbukkit.v1_18_R2.block.data.CraftBlockData
 import org.bukkit.material.Button
+import org.bukkit.material.Redstone
 import org.bukkit.plugin.Plugin
 import org.bukkit.scheduler.BukkitTask
 import java.util.*
@@ -52,10 +54,10 @@ class CraftMassBlockUpdate(private val plugin: Plugin, private val world: World)
     private var blocksModified = 0
 
     override fun setBlockState(x: Int, y: Int, z: Int, state: BlockState): Boolean {
-        val stateData = state.data
-        if(stateData is Button) {
+        val stateData = state.blockData
+        if(stateData is Powerable) {
             stateData.isPowered = false
-            state.data = stateData
+            state.blockData = stateData
         }
 
         val res = setBlock(x, y, z, state.blockData)
@@ -82,20 +84,12 @@ class CraftMassBlockUpdate(private val plugin: Plugin, private val world: World)
     override fun setBlock(x: Int, y: Int, z: Int, material: Material) = setBlock(x, y, z, material.createBlockData())
 
     override fun setBlock(x: Int, y: Int, z: Int, data: BlockData): Boolean {
-//        val b = world.getBlockAt(x, y, z)
-//        val state = b.state
-//        state.type = Material.getMaterial(blockId)
-//        state.data = MaterialData(blockId, data.toByte())
-//        state.update(true, false)
-//        return true
-
         minX = min(minX, x)
         minZ = min(minZ, z)
         maxX = max(maxX, x)
         maxZ = max(maxZ, z)
 
         blocksModified++
-        val oldBlockId = world.getBlockAt(x, y, z).type.id
         val res = setBlockFast(world, x, y, z, data)
 
         if (relightingStrategy != MassBlockUpdate.RelightingStrategy.NEVER) {
@@ -116,11 +110,11 @@ class CraftMassBlockUpdate(private val plugin: Plugin, private val world: World)
         if (relightingStrategy == MassBlockUpdate.RelightingStrategy.DEFERRED || relightingStrategy == MassBlockUpdate.RelightingStrategy.HYBRID) {
             relightTask = Bukkit.getScheduler().runTaskTimer(plugin, CraftMassBlockUpdateRunnable(), 1L, 1L)
         }
-//        if (relightingStrategy != MassBlockUpdate.RelightingStrategy.DEFERRED) {
-//            for (cc in calculateChunks()) {
-//                world.refreshChunk(cc.x, cc.z)
-//            }
-//        }
+        if (relightingStrategy != MassBlockUpdate.RelightingStrategy.DEFERRED) {
+            for (cc in calculateChunks()) {
+                world.refreshChunk(cc.x, cc.z)
+            }
+        }
     }
 
     override fun setMaxRelightTimePerTick(value: Long, timeUnit: TimeUnit) {

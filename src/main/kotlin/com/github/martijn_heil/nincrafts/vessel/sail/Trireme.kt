@@ -19,6 +19,9 @@
 
 package com.github.martijn_heil.nincrafts.vessel.sail
 
+import com.github.martijn_heil.nincrafts.RowingDirection
+import com.github.martijn_heil.nincrafts.util.detectFloodFill
+import com.github.martijn_heil.nincrafts.vessel.SimpleRudder
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.block.Block
@@ -29,13 +32,13 @@ import org.bukkit.event.HandlerList
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.plugin.Plugin
-import com.github.martijn_heil.nincrafts.RowingDirection
-import com.github.martijn_heil.nincrafts.vessel.SimpleRudder
-import java.util.*
 import java.util.logging.Logger
 
 
-class Trireme private constructor(plugin: Plugin, logger: Logger, blocks: ArrayList<Block>, rotationPoint: Location, sails: Collection<SimpleSail>, rudder: SimpleRudder, rowingSign: Sign, rowingDirectionSign: Sign) : SimpleSailingVessel(plugin, logger, blocks, rotationPoint, sails, rudder, rowingSign, rowingDirectionSign) {
+class Trireme private constructor(plugin: Plugin, logger: Logger, blocks: ArrayList<Block>, rotationPoint: Location,
+                                  sails: Collection<SimpleSail>, rudder: SimpleRudder,
+                                  rowingSign: Sign, rowingDirectionSign: Sign) :
+    SimpleSailingVessel(plugin, logger, blocks, rotationPoint, sails, rudder, rowingSign, rowingDirectionSign) {
     private val listener2 = object : Listener {
         @EventHandler(ignoreCancelled = true, priority = HIGHEST)
         fun onPlayerInteract(e: PlayerInteractEvent) {
@@ -63,12 +66,12 @@ class Trireme private constructor(plugin: Plugin, logger: Logger, blocks: ArrayL
             val sails: MutableCollection<SimpleSail> = ArrayList()
             try {
                 val maxSize = 5000
-                val allowedBlocks: Collection<Material> = Material.values().filter { it != Material.AIR && it != Material.WATER && it != Material.LEGACY_STATIONARY_WATER && it != Material.LAVA && it != Material.LEGACY_STATIONARY_LAVA }
-                val blocks: Collection<Block>
+                val disAllowedBlocks = hashSetOf(Material.AIR, Material.WATER, Material.LAVA)
+                val blocks: ArrayList<Block>
                 // Detect vessel
                 try {
                     logger.info("Detecting trireme at " + detectionLoc.x + "x " + detectionLoc.y + "y " + detectionLoc.z + "z")
-                    blocks = com.github.martijn_heil.nincrafts.util.detectFloodFill(detectionLoc, allowedBlocks, false, maxSize)
+                    blocks = detectFloodFill(detectionLoc, disAllowedBlocks, true, maxSize)
                 } catch(e: Exception) {
                     logger.info("Failed to detectFloodFill sailing vessel: " + (e.message ?: "unknown error"))
                     throw IllegalStateException(e.message)

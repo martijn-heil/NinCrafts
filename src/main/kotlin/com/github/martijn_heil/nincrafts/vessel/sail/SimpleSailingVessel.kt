@@ -57,6 +57,8 @@ import com.github.martijn_heil.nincrafts.vessel.SimpleSurfaceShip
 import java.lang.Math.*
 import java.util.*
 import java.util.logging.Logger
+import kotlin.collections.ArrayList
+import kotlin.collections.HashSet
 
 
 open class SimpleSailingVessel protected constructor(protected val plugin: Plugin, protected val logger: Logger,
@@ -382,12 +384,12 @@ open class SimpleSailingVessel protected constructor(protected val plugin: Plugi
             val sails: MutableCollection<SimpleSail> = ArrayList()
             try {
                 val maxSize = 5000
-                val allowedBlocks: Collection<Material> = Material.values().filter { it != AIR && it != WATER && it != LEGACY_STATIONARY_WATER && it != LAVA && it != LEGACY_STATIONARY_LAVA }
-                val blocks: Collection<Block>
+                val disAllowedBlocks = hashSetOf(Material.AIR, Material.WATER, Material.LAVA)
+                val blocks: ArrayList<Block>
                 // Detect vessel
                 try {
                     logger.info("Detecting sailing vessel at " + detectionLoc.x + "x " + detectionLoc.y + "y " + detectionLoc.z + "z")
-                    blocks = detectFloodFill(detectionLoc, allowedBlocks, false, maxSize)
+                    blocks = detectFloodFill(detectionLoc, disAllowedBlocks, true, maxSize)
                 } catch(e: Exception) {
                     logger.info("Failed to detectFloodFill sailing vessel: " + (e.message ?: "unknown error"))
                     throw IllegalStateException(e.message)

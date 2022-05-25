@@ -29,6 +29,7 @@ import org.bukkit.block.Block
 import org.bukkit.entity.Entity
 import org.bukkit.event.player.PlayerTeleportEvent
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.collections.HashSet
 
 fun getAdjactentBlocks(block: Block): Collection<Block> {
@@ -43,8 +44,8 @@ fun getAdjactentBlocks(block: Block): Collection<Block> {
     return list
 }
 
-fun detectFloodFill(startLocation: Location, allowedBlocks: Collection<Material>, isDisallowedList: Boolean, maxSize: Int): ArrayList<Block> {
-    val blocks = HashSet<Block>()
+fun detectFloodFill(startLocation: Location, conditionalBlockList: HashSet<Material>, isDisallowedList: Boolean, maxSize: Int): ArrayList<Block> {
+    val blocks = HashSet<Block>(maxSize)
 
     val s = Stack<Location>()
     s.push(startLocation)
@@ -53,12 +54,14 @@ fun detectFloodFill(startLocation: Location, allowedBlocks: Collection<Material>
         if(blocks.size >= maxSize) throw Exception("Maximum detection size ($maxSize) exceeded.")
 
         val loc = s.pop()
-        if(isDisallowedList && allowedBlocks.parallelStream().anyMatch { it == loc.block.type } ||
-                !isDisallowedList && !allowedBlocks.parallelStream().anyMatch { it == loc.block.type }) continue
-        //if(blocks.parallelStream().anyMatch { it == loc.block } ||
-        //        !allowedBlocks.parallelStream().anyMatch { it == loc.block.type })
-        //if(blocks.contains(loc.block) || !allowedBlocks.contains(loc.block.type)) continue
 
+        when(isDisallowedList) {
+            // List of disallowed blocks contains our type.
+            true -> if (conditionalBlockList.contains(loc.block.type)) continue
+
+            // List of allowed blocks doesn't contain our type.
+            false -> if (!conditionalBlockList.contains(loc.block.type)) continue
+        }
         if(!blocks.add(loc.block)) continue
 
         for (modX in -1..1) {

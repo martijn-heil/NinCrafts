@@ -34,15 +34,14 @@ import org.bukkit.Material.*
 import org.bukkit.block.Block
 import org.bukkit.block.BlockFace
 import org.bukkit.block.BlockState
+import org.bukkit.block.data.Attachable
+import org.bukkit.block.data.type.Ladder
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.player.PlayerTeleportEvent
-import org.bukkit.material.Attachable
-import org.bukkit.material.Directional
-import org.bukkit.material.Ladder
 import org.bukkit.plugin.Plugin
 import org.bukkit.util.Vector
 import java.util.stream.Collectors
@@ -62,7 +61,7 @@ open class SimpleSurfaceShip(private val plugin: Plugin, blocks: ArrayList<Block
     var isFlooding = false
         private set(value) {
             if(value && value != field) {
-                plugin.logger.info(this.toString() + " has started flooding!")
+                plugin.logger.info("$this has started flooding!")
                 floodTaskId = plugin.server.scheduler.scheduleSyncRepeatingTask(plugin, floodingTask, 0, floodPeriod)
                 if(floodTaskId == -1) throw RuntimeException("Could not schedule flooding task.")
             } else if(!value && floodTaskId != -1) {
@@ -78,7 +77,7 @@ open class SimpleSurfaceShip(private val plugin: Plugin, blocks: ArrayList<Block
     open var isSinking = false
         set(value) {
             if(value && value != field) {
-                plugin.logger.info(this.toString() + " has started sinking!")
+                plugin.logger.info("$this has started sinking!")
                 isFlooding = false
                 sinkingTaskId = plugin.server.scheduler.scheduleSyncRepeatingTask(plugin, {
                     try {
@@ -129,51 +128,53 @@ open class SimpleSurfaceShip(private val plugin: Plugin, blocks: ArrayList<Block
         fun getNewLocation(loc: Location): Location = getRotatedLocation(rotationPoint, rotation, loc)
 
         fun setBlockStateFast(fromState: BlockState, x: Int, y: Int, z: Int, massBlockUpdate: MassBlockUpdate) {
-            val materialData = fromState.data
-            if (materialData is Directional) {
-                if (materialData is Attachable && fromState.type != LADDER) {
+            val blockData = fromState.blockData
+            if (blockData is org.bukkit.block.data.Directional) {
+                Bukkit.getLogger().info("${fromState.type} is directional")
+                if (blockData is Attachable && fromState.type != LADDER) {
+                    Bukkit.getLogger().info("${fromState.type} is attachable and not a ladder")
                     when (rotation) {
                         Rotation.CLOCKWISE -> {
-                            when (materialData.facing) {
-                                BlockFace.NORTH -> materialData.setFacingDirection(BlockFace.EAST)
-                                BlockFace.EAST -> materialData.setFacingDirection(BlockFace.SOUTH)
-                                BlockFace.SOUTH -> materialData.setFacingDirection(BlockFace.WEST)
-                                BlockFace.WEST -> materialData.setFacingDirection(BlockFace.NORTH)
+                            when (blockData.facing.oppositeFace) {
+                                BlockFace.NORTH -> blockData.facing = BlockFace.EAST
+                                BlockFace.EAST -> blockData.facing = BlockFace.SOUTH
+                                BlockFace.SOUTH -> blockData.facing = BlockFace.WEST
+                                BlockFace.WEST -> blockData.facing = BlockFace.NORTH
                             }
                         }
 
                         Rotation.ANTICLOCKWISE -> {
-                            when (materialData.facing) {
-                                BlockFace.NORTH -> materialData.setFacingDirection(BlockFace.WEST)
-                                BlockFace.EAST -> materialData.setFacingDirection(BlockFace.NORTH)
-                                BlockFace.SOUTH -> materialData.setFacingDirection(BlockFace.EAST)
-                                BlockFace.WEST -> materialData.setFacingDirection(BlockFace.SOUTH)
+                            when (blockData.facing.oppositeFace) {
+                                BlockFace.NORTH -> blockData.facing = BlockFace.WEST
+                                BlockFace.EAST -> blockData.facing = BlockFace.NORTH
+                                BlockFace.SOUTH -> blockData.facing = BlockFace.EAST
+                                BlockFace.WEST -> blockData.facing = BlockFace.SOUTH
                             }
                         }
                     }
                 } else {
                     when (rotation) {
                         Rotation.CLOCKWISE -> {
-                            when (materialData.facing) {
-                                BlockFace.NORTH -> materialData.setFacingDirection(BlockFace.WEST)
-                                BlockFace.EAST -> materialData.setFacingDirection(BlockFace.NORTH)
-                                BlockFace.SOUTH -> materialData.setFacingDirection(BlockFace.EAST)
-                                BlockFace.WEST -> materialData.setFacingDirection(BlockFace.SOUTH)
+                            when (blockData.facing.oppositeFace) {
+                                BlockFace.NORTH -> blockData.facing = BlockFace.WEST
+                                BlockFace.EAST -> blockData.facing = BlockFace.NORTH
+                                BlockFace.SOUTH -> blockData.facing = BlockFace.EAST
+                                BlockFace.WEST -> blockData.facing = BlockFace.SOUTH
                             }
                         }
 
                         Rotation.ANTICLOCKWISE -> {
-                            when (materialData.facing) {
-                                BlockFace.NORTH -> materialData.setFacingDirection(BlockFace.EAST)
-                                BlockFace.EAST -> materialData.setFacingDirection(BlockFace.SOUTH)
-                                BlockFace.SOUTH -> materialData.setFacingDirection(BlockFace.WEST)
-                                BlockFace.WEST -> materialData.setFacingDirection(BlockFace.NORTH)
+                            when (blockData.facing.oppositeFace) {
+                                BlockFace.NORTH -> blockData.facing = BlockFace.EAST
+                                BlockFace.EAST -> blockData.facing = BlockFace.SOUTH
+                                BlockFace.SOUTH -> blockData.facing = BlockFace.WEST
+                                BlockFace.WEST -> blockData.facing = BlockFace.NORTH
                             }
                         }
                     }
                 }
 
-                fromState.data = materialData
+                fromState.blockData = blockData
             }
 
             massBlockUpdate.setBlockState(x, y, z, fromState)
@@ -196,7 +197,7 @@ open class SimpleSurfaceShip(private val plugin: Plugin, blocks: ArrayList<Block
         var cannons: ArrayList<Any>? = null
         if(NinCrafts.cannonsAPI != null) {
             cannons = ArrayList()
-            Bukkit.getOnlinePlayers().filter { it is Player }.forEach { p ->
+            Bukkit.getOnlinePlayers().filterIsInstance<Player>().forEach { p ->
                 (NinCrafts.cannonsAPI as at.pavlov.cannons.API.CannonsAPI)
                         .getCannons(oldBlockStates.map { it.location }, p.uniqueId).forEach { cannons.add(it) }
             }
@@ -319,8 +320,8 @@ open class SimpleSurfaceShip(private val plugin: Plugin, blocks: ArrayList<Block
             newLoc.z += relativeZ
             newLoc.y += relativeY
             val blockState = newLoc.block.state
-            val blockData = blockState.data
-            if (blockData is Ladder) { // This is to prevent players getting stuck in ladders
+            val blockData = blockState.blockData
+            if (blockData is Ladder && blockData.facing != null) { // This is to prevent players getting stuck in ladders
                 val amount = 0.1
                 when (blockData.facing) {
                     BlockFace.SOUTH -> if (newLoc.z < newLoc.z + amount) newLoc.z += amount

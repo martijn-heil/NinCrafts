@@ -36,6 +36,8 @@ import org.bukkit.event.entity.EntityExplodeEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import com.github.martijn_heil.nincrafts.Rotation
 import com.github.martijn_heil.nincrafts.util.getRotatedLocation
+import org.bukkit.block.data.type.WallSign
+import org.bukkit.material.MaterialData
 
 /*
     [Rudder]
@@ -45,7 +47,7 @@ class SimpleRudder(private var sign: Sign) : AutoCloseable {
     private var world = sign.world
 
     private val listener = object : Listener {
-        @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
+        @EventHandler(ignoreCancelled = true, priority = HIGHEST)
         fun onEntityExplode(e: EntityExplodeEvent) {
             e.blockList().remove(sign.block)
             e.blockList().remove(sign.block.getRelative((sign.data as org.bukkit.material.Sign).attachedFace))
@@ -77,9 +79,9 @@ class SimpleRudder(private var sign: Sign) : AutoCloseable {
 
         @EventHandler(ignoreCancelled = true)
         fun onBlockBreak(e: BlockBreakEvent) {
-            val signData = (sign.data as org.bukkit.material.Sign)
+            val signData = (sign.blockData as? WallSign) ?: return
 
-            if (e.block == sign.block || e.block == sign.block.getRelative(signData.attachedFace)) {
+            if (e.block == sign.block || e.block == sign.block.getRelative(signData.facing.oppositeFace)) {
                 e.isCancelled = true
             }
         }
@@ -114,6 +116,7 @@ class SimpleRudder(private var sign: Sign) : AutoCloseable {
 
     fun updateLocation(relativeX: Int, relativeY: Int, relativeZ: Int) {
         val newLoc = Location(world, (sign.block.x + relativeX).toDouble(), (sign.block.y + relativeY).toDouble(), (sign.block.z + relativeZ).toDouble())
+        Bukkit.getLogger().info("newLoc material: ${newLoc.block.type}, class: ${newLoc.block.state.javaClass.name}")
         sign = newLoc.block.state as Sign
     }
 
