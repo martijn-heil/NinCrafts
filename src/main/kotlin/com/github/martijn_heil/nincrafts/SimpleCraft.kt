@@ -20,10 +20,7 @@
 package com.github.martijn_heil.nincrafts
 
 import com.github.martijn_heil.nincrafts.exception.CouldNotMoveCraftException
-import com.github.martijn_heil.nincrafts.util.BlockProtector
-import com.github.martijn_heil.nincrafts.util.BoundingBox
-import com.github.martijn_heil.nincrafts.util.MassBlockUpdate
-import com.github.martijn_heil.nincrafts.util.getRotatedLocation
+import com.github.martijn_heil.nincrafts.util.*
 import com.github.martijn_heil.nincrafts.util.nms.CraftMassBlockUpdate
 import org.bukkit.Location
 import org.bukkit.Material.*
@@ -32,17 +29,14 @@ import org.bukkit.block.Block
 import org.bukkit.block.BlockFace
 import org.bukkit.block.BlockState
 import org.bukkit.entity.Entity
-import org.bukkit.entity.Player
 import org.bukkit.event.player.PlayerTeleportEvent
-import org.bukkit.material.Attachable
-import org.bukkit.material.Directional
-import org.bukkit.material.Ladder
 import org.bukkit.plugin.Plugin
-import org.bukkit.util.Vector
-import java.util.*
+import kotlin.collections.HashMap
+import kotlin.streams.asSequence
 
 
-open class SimpleCraft(private val plugin: Plugin, blocks: Collection<Block>, rotationPoint: Location) : MoveableCraft, RotatableCraft, AutoCloseable {
+open class SimpleCraft(private val plugin: Plugin, blocks: Collection<Block>, rotationPoint: Location)
+    : MoveableCraft, RotatableCraft, AutoCloseable {
 
     var boundingBox: BoundingBox = BoundingBox(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
     protected val blockProtector = BlockProtector(plugin)
@@ -56,7 +50,12 @@ open class SimpleCraft(private val plugin: Plugin, blocks: Collection<Block>, ro
         }
 
     protected open val world: World get() = location.world!!
-    protected open var blocks: ArrayList<Block> = ArrayList(blocks)
+    protected open var blocks: MutableMap<RelativeBlock, BlockState> =
+        HashMap(blocks
+            .asSequence()
+            .map { RelativeBlock.fromAbsoluteLocation(location, it.location) }
+            .associateWith { it.resolve(location).state }
+        )
 
     override val onBoardEntities: List<Entity>
         get() {
@@ -67,7 +66,8 @@ open class SimpleCraft(private val plugin: Plugin, blocks: Collection<Block>, ro
             val centerY = boundingBox.minY + widthY / 2
             val centerZ = boundingBox.minZ + widthZ / 2
             // For some reason that filter is really required
-            return world.getNearbyEntities(Location(world, centerX, centerY, centerZ), widthX, widthY, widthZ).filter { boundingBox.contains(it.location) }
+            return world.getNearbyEntities(Location(world, centerX, centerY, centerZ), widthX, widthY, widthZ)
+                .filter { boundingBox.contains(it.location) }
         }
 
 
@@ -90,15 +90,25 @@ open class SimpleCraft(private val plugin: Plugin, blocks: Collection<Block>, ro
         }
     }
 
-    open fun containsBlock(block: Block) = boundingBox.contains(block) && blocks.parallelStream().anyMatch { it == block }
+    fun getBlock(at: RelativeBlock) = at.resolve(location)
 
-    open fun containsBlockAny(blocks: Collection<Block>) = this.blocks
-            .parallelStream()
-            .anyMatch { val shipBlock = it; blocks.parallelStream()
-                    .anyMatch { boundingBox.contains(it) && it == shipBlock } }
+    fun relativeBlockToLocation(at: RelativeBlock) = Location(world,
+        location.x + at.x.toDouble(), location.y + at.y.toDouble(), location.z + at.z.toDouble())
 
-    open fun addBlock(block: Block) = {
-        blocks.add(block)
+    fun getRelativeBlock(at: Block) = RelativeBlock(
+        location.x.toInt() - at.x,
+        location.y.toInt() - at.y,
+        location.z.toInt() - at.z
+    )
+
+    open fun containsBlock(relative: RelativeBlock) = blocks.contains(relative)
+    open fun containsBlock(block: Block) = blocks.contains(RelativeBlock.fromAbsoluteLocation(location, block.location))
+
+    open fun containsBlockAny(blocks: Collection<Block>) =
+        blocks.parallelStream().anyMatch { this.blocks.contains(RelativeBlock.fromAbsoluteLocation(location, it.location)) }
+
+    open fun addBlock(block: Block) {
+        blocks[getRelativeBlock(block)] = block.state
         if (block.x > boundingBox.maxX) boundingBox.maxX = block.x.toDouble()
         if (block.y > boundingBox.maxY) boundingBox.maxY = block.y.toDouble()
         if (block.z > boundingBox.maxZ) boundingBox.maxZ = block.z.toDouble()
@@ -108,105 +118,108 @@ open class SimpleCraft(private val plugin: Plugin, blocks: Collection<Block>, ro
         if (block.z < boundingBox.minZ) boundingBox.minZ = block.z.toDouble()
     }
 
-    open fun removeBlock(block: Block) = blocks.remove(block)
+    open fun removeBlock(block: Block) = blocks.remove(getRelativeBlock(block))
+
+    open fun restoreBlockInWake(block: Location, massBlockUpdate: MassBlockUpdate) =
+        massBlockUpdate.setBlock(block.blockX, block.blockY, block.blockZ, AIR)
+
+    open fun restoreBlockInWake(block: Block, massBlockUpdate: MassBlockUpdate) =
+        restoreBlockInWake(block.location, massBlockUpdate)
+
+    open fun doesObstructCraft(block: Block) = block.isSolid
 
 
     override fun rotate(rotation: Rotation) {
         fun getNewLocation(loc: Location): Location = getRotatedLocation(rotationPoint, rotation, loc)
+        fun getNewRelativeBlock(loc: RelativeBlock): RelativeBlock = getRotatedRelativeBlock(rotation, loc)
 
         fun setBlockStateFast(fromState: BlockState, x: Int, y: Int, z: Int, massBlockUpdate: MassBlockUpdate) {
-            val materialData = fromState.data
-            if (materialData is Directional) {
-                if (materialData is Attachable && fromState.type != LADDER) {
+            val blockData = fromState.blockData
+            if (blockData is org.bukkit.block.data.Directional) {
+                if (blockData is org.bukkit.block.data.Attachable && fromState.type != LADDER) {
                     when (rotation) {
                         Rotation.CLOCKWISE -> {
-                            when (materialData.facing) {
-                                BlockFace.NORTH -> materialData.setFacingDirection(BlockFace.EAST)
-                                BlockFace.EAST -> materialData.setFacingDirection(BlockFace.SOUTH)
-                                BlockFace.SOUTH -> materialData.setFacingDirection(BlockFace.WEST)
-                                BlockFace.WEST -> materialData.setFacingDirection(BlockFace.NORTH)
+                            when (blockData.facing.oppositeFace) {
+                                BlockFace.NORTH -> blockData.facing = BlockFace.EAST
+                                BlockFace.EAST -> blockData.facing = BlockFace.SOUTH
+                                BlockFace.SOUTH -> blockData.facing = BlockFace.WEST
+                                BlockFace.WEST -> blockData.facing = BlockFace.NORTH
                             }
                         }
 
                         Rotation.ANTICLOCKWISE -> {
-                            when (materialData.facing) {
-                                BlockFace.NORTH -> materialData.setFacingDirection(BlockFace.WEST)
-                                BlockFace.EAST -> materialData.setFacingDirection(BlockFace.NORTH)
-                                BlockFace.SOUTH -> materialData.setFacingDirection(BlockFace.EAST)
-                                BlockFace.WEST -> materialData.setFacingDirection(BlockFace.SOUTH)
+                            when (blockData.facing.oppositeFace) {
+                                BlockFace.NORTH -> blockData.facing = BlockFace.WEST
+                                BlockFace.EAST -> blockData.facing = BlockFace.NORTH
+                                BlockFace.SOUTH -> blockData.facing = BlockFace.EAST
+                                BlockFace.WEST -> blockData.facing = BlockFace.SOUTH
                             }
                         }
                     }
                 } else {
                     when (rotation) {
                         Rotation.CLOCKWISE -> {
-                            when (materialData.facing) {
-                                BlockFace.NORTH -> materialData.setFacingDirection(BlockFace.WEST)
-                                BlockFace.EAST -> materialData.setFacingDirection(BlockFace.NORTH)
-                                BlockFace.SOUTH -> materialData.setFacingDirection(BlockFace.EAST)
-                                BlockFace.WEST -> materialData.setFacingDirection(BlockFace.SOUTH)
+                            when (blockData.facing.oppositeFace) {
+                                BlockFace.NORTH -> blockData.facing = BlockFace.WEST
+                                BlockFace.EAST -> blockData.facing = BlockFace.NORTH
+                                BlockFace.SOUTH -> blockData.facing = BlockFace.EAST
+                                BlockFace.WEST -> blockData.facing = BlockFace.SOUTH
                             }
                         }
 
                         Rotation.ANTICLOCKWISE -> {
-                            when (materialData.facing) {
-                                BlockFace.NORTH -> materialData.setFacingDirection(BlockFace.EAST)
-                                BlockFace.EAST -> materialData.setFacingDirection(BlockFace.SOUTH)
-                                BlockFace.SOUTH -> materialData.setFacingDirection(BlockFace.WEST)
-                                BlockFace.WEST -> materialData.setFacingDirection(BlockFace.NORTH)
+                            when (blockData.facing.oppositeFace) {
+                                BlockFace.NORTH -> blockData.facing = BlockFace.EAST
+                                BlockFace.EAST -> blockData.facing = BlockFace.SOUTH
+                                BlockFace.SOUTH -> blockData.facing = BlockFace.WEST
+                                BlockFace.WEST -> blockData.facing = BlockFace.NORTH
                             }
                         }
                     }
                 }
 
-                fromState.data = materialData
+                fromState.blockData = blockData
             }
 
+            if (fromState.type == world.getBlockAt(x, y, z).type) return
             massBlockUpdate.setBlockState(x, y, z, fromState)
         }
 
-        val torches = ArrayList<BlockState>()
-        val oldBlockStates = ArrayList<BlockState>(blocks.size)
+        val newLocation = getNewLocation(location)
+
         for (b in blocks) {
-            val newBlock = world.getBlockAt(getNewLocation(b.location))
-            if (newBlock.type.isSolid && !containsBlock(newBlock)) { // Collision
+            val newBlock = b.key.resolve(newLocation)
+            if (doesObstructCraft(newBlock) && !containsBlock(RelativeBlock.fromAbsoluteLocation(location, newBlock.location))) { // Collision
                 throw CouldNotMoveCraftException("Craft is obstructed by " + newBlock.type.toString() + " at " + newBlock.x +
                         ", " + newBlock.y + ", " + newBlock.z)
             }
-            if (b.type == TORCH) torches.add(b.state) else oldBlockStates.add(b.state)
         }
 
 
         val onBoardEntities = onBoardEntities
-        var cannons: ArrayList<Any>? = null
-        if (NinCrafts.cannonsAPI != null) {
-            cannons = ArrayList() // TODO only detectFloodFill cannons when detecting ship, saves time
-            val cannonsAPI = NinCrafts.cannonsAPI as at.pavlov.cannons.API.CannonsAPI
-            onBoardEntities
-                    .filter { it is Player }
-                    .forEach { p ->
-                        cannonsAPI.getCannons(oldBlockStates
-                                .map { it.location }, p.uniqueId).forEach { cannons.add(it) }
-                    }
-        }
+//        var cannons: ArrayList<Any>? = null
+//        if (NinCrafts.cannonsAPI != null) {
+//            cannons = ArrayList() // TODO only detectFloodFill cannons when detecting ship, saves time
+//            val cannonsAPI = NinCrafts.cannonsAPI as at.pavlov.cannons.API.CannonsAPI
+//            onBoardEntities
+//                    .filterIsInstance<Player>()
+//                    .forEach { p ->
+//                        cannonsAPI.getCannons(oldBlockStates
+//                                .map { it.location }, p.uniqueId).forEach { cannons.add(it) }
+//                    }
+//        }
 
 
-        blocks.clear()
         val massBlockUpdate: MassBlockUpdate = CraftMassBlockUpdate(plugin, world)
         massBlockUpdate.relightingStrategy = MassBlockUpdate.RelightingStrategy.NEVER
 
-        for (s in oldBlockStates) {
-            val newBlock = world.getBlockAt(getNewLocation(s.location))
-            setBlockStateFast(s, newBlock.x, newBlock.y, newBlock.z, massBlockUpdate)
-            blocks.add(newBlock)
+        // Set new blocks
+        for (b in blocks) {
+            val newBlock = b.key.resolve(newLocation)
+            setBlockStateFast(b.value, newBlock.x, newBlock.y, newBlock.z, massBlockUpdate)
         }
 
-        torches.forEach {
-            val newBlock = world.getBlockAt(getNewLocation(it.location))
-            setBlockStateFast(it, newBlock.x, newBlock.y, newBlock.z, massBlockUpdate)
-            blocks.add(newBlock)
-        }
-
+        // Teleport entities
         onBoardEntities.forEach {
             val loc = it.location
             val newLoc = getNewLocation(it.location)
@@ -238,19 +251,18 @@ open class SimpleCraft(private val plugin: Plugin, blocks: Collection<Block>, ro
         if (second.z.toInt() > boundingBox.maxZ) boundingBox.maxZ = second.z
 
 
-        cannons?.forEach {
-            if (it !is at.pavlov.cannons.cannon.Cannon) {
-                return
+//        cannons?.forEach {
+//            if (it !is at.pavlov.cannons.cannon.Cannon) {
+//                return
+//            }
+//            if (rotation == Rotation.CLOCKWISE) it.rotateRight(rotationPoint.toVector()) else it.rotateLeft(rotationPoint.toVector())
+//        }
+
+        for (b in blocks) {
+            val oldBlockLocation = b.key.resolveToLocation(location)
+            if (!containsBlock(RelativeBlock.fromAbsoluteLocation(newLocation, oldBlockLocation))) {
+                restoreBlockInWake(oldBlockLocation, massBlockUpdate)
             }
-            if (rotation == Rotation.CLOCKWISE) it.rotateRight(rotationPoint.toVector()) else it.rotateLeft(rotationPoint.toVector())
-        }
-
-        for (s in oldBlockStates) {
-            if (!containsBlock(s.block)) massBlockUpdate.setBlock(s.x, s.y, s.z, AIR)
-        }
-
-        for (s in torches) {
-            if (!containsBlock(s.block)) massBlockUpdate.setBlock(s.x, s.y, s.z, AIR)
         }
 
         blockProtector.updateAllLocationsRotated(rotation, rotationPoint)
@@ -262,65 +274,64 @@ open class SimpleCraft(private val plugin: Plugin, blocks: Collection<Block>, ro
         if (boundingBox.minY + relativeY < 1) throw CouldNotMoveCraftException("Craft can not descend any further.")
         if (relativeX == 0 && relativeY == 0 && relativeZ == 0) return
 
-        val torches = ArrayList<BlockState>()
-        val oldBlockStates = ArrayList<BlockState>(blocks.size)
+        val newLocation = location + Location(world, relativeX.toDouble(), relativeY.toDouble(), relativeZ.toDouble())
+
+        // Check for block obstruction
         for (b in blocks) {
-            val newBlock = world.getBlockAt(b.x + relativeX, b.y + relativeY, b.z + relativeZ)
-            if (newBlock.type != AIR && !containsBlock(newBlock)) { // Collision
+            val newBlock = b.key.resolve(newLocation)
+            if (doesObstructCraft(newBlock) && !containsBlock(newBlock)) { // Collision
                 // Notify everyone on board
                 throw CouldNotMoveCraftException("Craft is obstructed by " + newBlock.type.toString() + " at " + newBlock.x +
                         ", " + newBlock.y + ", " + newBlock.z)
             }
-            if (b.type == TORCH) torches.add(b.state) else oldBlockStates.add(b.state)
         }
 
         val onBoardEntities = onBoardEntities
-        var cannons: ArrayList<Any>? = null
-        if (NinCrafts.cannonsAPI != null) {
-            cannons = ArrayList() // TODO only detectFloodFill cannons when detecting ship, saves time
-            val cannonsAPI = NinCrafts.cannonsAPI as at.pavlov.cannons.API.CannonsAPI
-            onBoardEntities
-                    .filter { it is Player }
-                    .forEach { p ->
-                        cannonsAPI.getCannons(oldBlockStates
-                                .map { it.location }, p.uniqueId).forEach { cannons.add(it) }
-                    }
-        }
+//        var cannons: ArrayList<Any>? = null
+//        if (NinCrafts.cannonsAPI != null) {
+//            cannons = ArrayList() // TODO only detectFloodFill cannons when detecting ship, saves time
+//            val cannonsAPI = NinCrafts.cannonsAPI as at.pavlov.cannons.API.CannonsAPI
+//            onBoardEntities
+//                    .filterIsInstance<Player>()
+//                    .forEach { p ->
+//                        cannonsAPI.getCannons(oldBlockStates
+//                                .map { it.location }, p.uniqueId).forEach { cannons.add(it) }
+//                    }
+//        }
 
 
-        blocks.clear()
         val massBlockUpdate: MassBlockUpdate = CraftMassBlockUpdate(NinCrafts.instance, world)
         massBlockUpdate.relightingStrategy = MassBlockUpdate.RelightingStrategy.NEVER
 
-        for (s in oldBlockStates) {
-            val newBlock = world.getBlockAt(s.x + relativeX, s.y + relativeY, s.z + relativeZ)
-            massBlockUpdate.setBlockState(newBlock.x, newBlock.y, newBlock.z, s)
-            blocks.add(newBlock)
+        for (b in blocks) {
+            val newBlockLocation = b.key.resolveToLocation(newLocation)
+            massBlockUpdate.setBlockState(newBlockLocation.blockX, newBlockLocation.blockY, newBlockLocation.blockZ, b.value)
         }
 
-        torches.forEach {
-            val newBlock = world.getBlockAt(it.x + relativeX, it.y + relativeY, it.z + relativeZ)
-            massBlockUpdate.setBlockState(newBlock.x, newBlock.y, newBlock.z, it)
-            blocks.add(newBlock)
-        }
-
+        // Teleport entities
         onBoardEntities.forEach {
             val newLoc = it.location
             newLoc.x += relativeX
             newLoc.z += relativeZ
             newLoc.y += relativeY
             val blockState = newLoc.block.state
-            val blockData = blockState.data
-            if (blockData is Ladder) { // This is to prevent players getting stuck in ladders
+            val blockData = blockState.blockData
+
+            // This is to prevent players getting stuck in ladders
+            if (blockData is org.bukkit.block.data.type.Ladder && blockData.facing != null) {
                 val amount = 0.1
                 when (blockData.facing) {
                     BlockFace.SOUTH -> if (newLoc.z < newLoc.z + amount) newLoc.z += amount
                     BlockFace.WEST -> if (newLoc.x > newLoc.x - amount) newLoc.x -= amount
                     BlockFace.NORTH -> if (newLoc.z > newLoc.z - amount) newLoc.z -= amount
                     BlockFace.EAST -> if (newLoc.x < newLoc.x + amount) newLoc.x += amount
+                    else -> throw IllegalStateException()
                 }
             }
+
+            val velo = it.velocity
             it.teleport(newLoc, PlayerTeleportEvent.TeleportCause.PLUGIN)
+            it.velocity = velo
         }
 
         boundingBox.minX += relativeX
@@ -334,19 +345,17 @@ open class SimpleCraft(private val plugin: Plugin, blocks: Collection<Block>, ro
         rotationPoint.z += relativeZ
         rotationPoint.y += relativeY
 
-        cannons?.forEach {
-            if (it !is at.pavlov.cannons.cannon.Cannon) {
-                return
-            }
-            it.move(Vector(relativeX, relativeY, relativeZ))
-        }
+//        cannons?.forEach {
+//            if (it !is at.pavlov.cannons.cannon.Cannon) {
+//                return
+//            }
+//            it.move(Vector(relativeX, relativeY, relativeZ))
+//        }
 
-        for (s in oldBlockStates) {
-            if (!containsBlock(s.block)) massBlockUpdate.setBlock(s.x, s.y, s.z, AIR)
-        }
-
-        for (s in torches) {
-            if (!containsBlock(s.block)) massBlockUpdate.setBlock(s.x, s.y, s.z, AIR)
+        for (b in blocks) {
+            val oldBlockLocation = b.key.resolveToLocation(location)
+            if (containsBlock(b.key)) continue
+            restoreBlockInWake(oldBlockLocation, massBlockUpdate)
         }
 
         blockProtector.updateAllLocations(world, relativeX, relativeY, relativeZ)

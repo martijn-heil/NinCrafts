@@ -19,6 +19,7 @@
 
 package com.github.martijn_heil.nincrafts.util
 
+import com.github.martijn_heil.nincrafts.RelativeBlock
 import com.github.martijn_heil.nincrafts.Rotation
 import com.github.martijn_heil.nincrafts.Rotation.CLOCKWISE
 import org.bukkit.Bukkit
@@ -57,7 +58,6 @@ fun getAdjacentLocations(origin: Location): Array<Location> {
             }
         }
     }
-    Bukkit.getLogger().info("size: ${locations.size}")
     return locations
 }
 
@@ -94,6 +94,12 @@ fun getRotatedLocation(rotationPoint: Location, rotation: Rotation, loc: Locatio
     val newRelativeX = if (rotation == CLOCKWISE) rotationPoint.z - loc.z else -(rotationPoint.z - loc.z)
     val newRelativeZ = if(rotation == CLOCKWISE) -(rotationPoint.x - loc.x) else rotationPoint.x - loc.x
     return Location(loc.world, rotationPoint.x + newRelativeX, loc.y, rotationPoint.z + newRelativeZ)
+}
+
+fun getRotatedRelativeBlock(rotation: Rotation, loc: RelativeBlock): RelativeBlock {
+    val phonyRotationPoint = Location(null, 0.00, 0.00, 0.00)
+    val rotated = getRotatedLocation(phonyRotationPoint, rotation, loc.asRelativeLocation())
+    return RelativeBlock.fromRelativeLocation(rotated)
 }
 
 fun getRotatedLocation(output: Location, rotationPoint: Location, rotation: Rotation, loc: Location) {
