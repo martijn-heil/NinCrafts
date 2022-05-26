@@ -35,9 +35,9 @@ import org.bukkit.plugin.Plugin
 import java.util.logging.Logger
 
 
-class Trireme private constructor(plugin: Plugin, logger: Logger, blocks: ArrayList<Block>, rotationPoint: Location,
-                                  sails: Collection<SimpleSail>, rudder: SimpleRudder,
-                                  rowingSign: Sign, rowingDirectionSign: Sign) :
+class Lenke private constructor(plugin: Plugin, logger: Logger, blocks: ArrayList<Block>, rotationPoint: Location,
+                                sails: Collection<SimpleSail>, rudder: SimpleRudder,
+                                rowingSign: Sign, rowingDirectionSign: Sign) :
     SimpleSailingVessel(plugin, logger, blocks, rotationPoint, sails, rudder, rowingSign, rowingDirectionSign) {
     private val listener2 = object : Listener {
         @EventHandler(ignoreCancelled = true, priority = HIGHEST)
@@ -65,7 +65,7 @@ class Trireme private constructor(plugin: Plugin, logger: Logger, blocks: ArrayL
         fun detect(plugin: Plugin, logger: Logger, detectionLoc: Location): SimpleSailingVessel {
             val sails: MutableCollection<SimpleSail> = ArrayList()
             try {
-                val maxSize = 5000
+                val maxSize = 50000
                 val disAllowedBlocks = hashSetOf(Material.AIR, Material.WATER, Material.LAVA, Material.KELP, Material.KELP_PLANT)
                 val blocks: ArrayList<Block>
                 // Detect vessel
@@ -76,7 +76,7 @@ class Trireme private constructor(plugin: Plugin, logger: Logger, blocks: ArrayL
                     logger.info("Failed to detectFloodFill sailing vessel: " + (e.message ?: "unknown error"))
                     throw IllegalStateException(e.message)
                 }
-                val signs = blocks.map { it.state }.filter { it is Sign }.map { it as Sign }
+                val signs = blocks.map { it.state }.filterIsInstance<Sign>()
                 val rotationPointSign = signs.find { it.lines[0] == "[RotationPoint]" }
                 if (rotationPointSign == null) {
                     logger.warning("Could not detectFloodFill rotation point")
@@ -95,7 +95,7 @@ class Trireme private constructor(plugin: Plugin, logger: Logger, blocks: ArrayL
                 logger.info("Found rowing sign at " + rowingSign.x + " " + rowingSign.y + " " + rudderSign.z)
 
                 val rowingDirectionSign = signs.find { it.lines[0] == "[RowingDirection]" } ?: throw IllegalStateException("No rowing direction sign found.")
-                if(rowingDirectionSign.lines[1] == "") rowingDirectionSign.setLine(1, RowingDirection.FORWARD.toString().toLowerCase())
+                if(rowingDirectionSign.lines[1] == "") rowingDirectionSign.setLine(1, RowingDirection.FORWARD.toString().lowercase())
                 logger.info("Found RowingDirection sign at " + rowingDirectionSign.x + " " + rowingDirectionSign.y + " " + rowingDirectionSign.z)
 
                 // Detect sails
@@ -105,7 +105,7 @@ class Trireme private constructor(plugin: Plugin, logger: Logger, blocks: ArrayL
                 }
                 if (sails.isEmpty()) throw IllegalStateException("No sails found.")
 
-                val trireme = Trireme(plugin, logger, blocks, rotationPoint, sails, rudder, rowingSign, rowingDirectionSign)
+                val trireme = Lenke(plugin, logger, blocks, rotationPoint, sails, rudder, rowingSign, rowingDirectionSign)
                 trireme.init()
                 return trireme
             } catch(t: Throwable) {

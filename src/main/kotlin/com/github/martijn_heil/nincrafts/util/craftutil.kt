@@ -21,6 +21,7 @@ package com.github.martijn_heil.nincrafts.util
 
 import com.github.martijn_heil.nincrafts.Rotation
 import com.github.martijn_heil.nincrafts.Rotation.CLOCKWISE
+import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.Material.AIR
@@ -29,6 +30,7 @@ import org.bukkit.block.Block
 import org.bukkit.entity.Entity
 import org.bukkit.event.player.PlayerTeleportEvent
 import java.util.*
+import org.bukkit.util.Vector
 import kotlin.collections.ArrayList
 import kotlin.collections.HashSet
 
@@ -44,33 +46,44 @@ fun getAdjactentBlocks(block: Block): Collection<Block> {
     return list
 }
 
+fun getAdjacentLocations(origin: Location): Array<Location> {
+    val locations = Array(27) { Location(null, 0.00, 0.00, 0.00) }
+    var i = 0
+    for (modX in -1..1) {
+        for(modY in -1..1) {
+            for(modZ in -1..1) {
+                locations[i] = Location(origin.world, origin.x + modX, origin.y + modY, origin.z + modZ)
+                i++
+            }
+        }
+    }
+    Bukkit.getLogger().info("size: ${locations.size}")
+    return locations
+}
+
 fun detectFloodFill(startLocation: Location, conditionalBlockList: HashSet<Material>, isDisallowedList: Boolean, maxSize: Int): ArrayList<Block> {
     val blocks = HashSet<Block>(maxSize)
 
     val s = Stack<Location>()
     s.push(startLocation)
+    getAdjacentLocations(startLocation).forEach { s.push(it) }
 
     while(!s.isEmpty()) {
         if(blocks.size >= maxSize) throw Exception("Maximum detection size ($maxSize) exceeded.")
 
         val loc = s.pop()
+        val block = loc.block
 
         when(isDisallowedList) {
             // List of disallowed blocks contains our type.
-            true -> if (conditionalBlockList.contains(loc.block.type)) continue
+            true -> if (conditionalBlockList.contains(block.type)) continue
 
             // List of allowed blocks doesn't contain our type.
-            false -> if (!conditionalBlockList.contains(loc.block.type)) continue
+            false -> if (!conditionalBlockList.contains(block.type)) continue
         }
-        if(!blocks.add(loc.block)) continue
+        if(!blocks.add(block)) continue
 
-        for (modX in -1..1) {
-            for(modY in -1..1) {
-                for(modZ in -1..1) {
-                    s.push(Location(loc.world, loc.x + modX, loc.y + modY, loc.z + modZ))
-                }
-            }
-        }
+        getAdjacentLocations(loc).forEach { s.push(it) }
     }
 
     if(blocks.isEmpty()) throw Exception("Could not detectFloodFill any allowed blocks.")
@@ -131,3 +144,16 @@ fun rotateEntities(entities: Collection<Entity>, rotationPoint: Location, rotati
         it.teleport(newLoc, PlayerTeleportEvent.TeleportCause.PLUGIN)
     }
 }
+
+
+operator fun Vector.plus(what: Vector) = this.clone().add(what)!! // v1 + v2
+operator fun Vector.minus(what: Vector) = this.clone().subtract(what)!! // v1 - v2
+operator fun Vector.times(what: Double) = this.clone().multiply(what)!! // v1 * a
+operator fun Vector.div(what: Double) = this.clone().multiply(1 / what)!! // v1 / a
+
+operator fun Location.plus(what: Location) = this.clone().add(what)!! // l1 + l2
+operator fun Location.plus(what: Vector) = this.clone().add(what)!! // l + v
+operator fun Location.minus(what: Location) = this.clone().subtract(what)!! // l1 - l2
+operator fun Location.minus(what: Vector) = this.clone().subtract(what)!! // l - v
+operator fun Location.times(what: Double) = this.clone().multiply(what)!! // l1 * a
+operator fun Location.div(what: Double) = this.clone().multiply(1 / what)!! // l1 / a

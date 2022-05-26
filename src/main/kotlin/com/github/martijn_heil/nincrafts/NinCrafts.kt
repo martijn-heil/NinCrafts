@@ -110,6 +110,17 @@ class NinCrafts : JavaPlugin() {
                                 ex.printStackTrace()
                             }
                         }
+
+                        "Lenke" -> {
+                            try {
+                                crafts.add(Lenke.detect(plugin, plugin.logger, e.clickedBlock!!.location))
+                            } catch(ex: IllegalStateException) {
+                                e.player.sendMessage(ChatColor.RED.toString() + "Error: " + ex.message)
+                            } catch(ex: Exception) {
+                                e.player.sendMessage(ChatColor.RED.toString() + "An internal server error occurred." + ex.message)
+                                ex.printStackTrace()
+                            }
+                        }
                     }
                 }
             }

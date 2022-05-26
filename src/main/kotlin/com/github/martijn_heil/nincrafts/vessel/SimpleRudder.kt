@@ -116,7 +116,6 @@ class SimpleRudder(private var sign: Sign) : AutoCloseable {
 
     fun updateLocation(relativeX: Int, relativeY: Int, relativeZ: Int) {
         val newLoc = Location(world, (sign.block.x + relativeX).toDouble(), (sign.block.y + relativeY).toDouble(), (sign.block.z + relativeZ).toDouble())
-        Bukkit.getLogger().info("newLoc material: ${newLoc.block.type}, class: ${newLoc.block.state.javaClass.name}")
         sign = newLoc.block.state as Sign
     }
 

@@ -72,14 +72,21 @@ class SimpleSail(private val plugin: Plugin, private var sign: Sign) : Sail, Aut
     init {
         try {
             // TODO fix this shit
-            blocks = ArrayList(detectFloodFill(Location(sign.location.world, sign.location.x, sign.location.y - 1, sign.location.z ), woolBlocks, false, 500))
+            Bukkit.getLogger().info("Allowed blocks for sails: $woolBlocks")
+            val detected = detectFloodFill(Location(sign.location.world,
+                sign.location.x,
+                sign.location.y - 1,
+                sign.location.z), woolBlocks, false, 500)
+            blocks = ArrayList(detected)
         } catch(ex: Exception) {
-            throw IllegalStateException("Could not detectFloodFill sail (sign at " + sign.location.x + "x " + sign.location.y + " y" + sign.location.z + " z): " + ex.message)
+            throw IllegalStateException("Could not detectFloodFill sail (sign at " + sign.location.x + "x " +
+                    sign.location.y + " y" + sign.location.z + " z): " + ex.message)
         }
 
         Bukkit.getPluginManager().registerEvents(listener, plugin)
         blockProtector.protectedBlocks.add(sign.block.location)
-        blockProtector.protectedBlocks.add(sign.block.getRelative((sign.data as org.bukkit.material.Sign).attachedFace).location)
+        // TODO fix
+        //blockProtector.protectedBlocks.add(sign.block.getRelative((sign.blockData as Sign).attachedFace).location)
 
         name = if(sign.lines.size >= 2) sign.lines[1] else null
         isHoisted = false

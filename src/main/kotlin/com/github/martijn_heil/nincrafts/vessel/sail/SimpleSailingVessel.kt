@@ -320,7 +320,8 @@ open class SimpleSailingVessel protected constructor(protected val plugin: Plugi
         Bukkit.getPluginManager().registerEvents(listener, NinCrafts.instance)
 
         blockProtector.protectedBlocks.add(rowingSign.location)
-        blockProtector.protectedBlocks.add(rowingSign.block.getRelative((rowingSign.data as org.bukkit.material.Sign).attachedFace).location)
+        // TODO fix
+        //blockProtector.protectedBlocks.add(rowingSign.block.getRelative((rowingSign.data as org.bukkit.material.Sign).attachedFace).location)
         blockProtector.protectedBlocks.add(rowingDirectionSign.location)
         blockProtector.protectedBlocks.add(rowingDirectionSign.block.getRelative((rowingDirectionSign.data as org.bukkit.material.Sign).attachedFace).location)
     }

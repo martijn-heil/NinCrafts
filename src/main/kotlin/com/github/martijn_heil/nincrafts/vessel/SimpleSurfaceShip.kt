@@ -24,11 +24,10 @@ import com.github.martijn_heil.nincrafts.Rotation
 import com.github.martijn_heil.nincrafts.SimpleCraft
 import com.github.martijn_heil.nincrafts.configuredSeaLevel
 import com.github.martijn_heil.nincrafts.exception.CouldNotMoveCraftException
-import com.github.martijn_heil.nincrafts.util.MassBlockUpdate
-import com.github.martijn_heil.nincrafts.util.detectAirBlocksBelowWaterLevel
-import com.github.martijn_heil.nincrafts.util.getRotatedLocation
+import com.github.martijn_heil.nincrafts.util.*
 import com.github.martijn_heil.nincrafts.util.nms.CraftMassBlockUpdate
 import org.bukkit.Bukkit
+import org.bukkit.GameMode
 import org.bukkit.Location
 import org.bukkit.Material.*
 import org.bukkit.block.Block
@@ -177,6 +176,7 @@ open class SimpleSurfaceShip(private val plugin: Plugin, blocks: ArrayList<Block
                 fromState.blockData = blockData
             }
 
+            if (fromState.type == world.getBlockAt(x, y, z).type) return
             massBlockUpdate.setBlockState(x, y, z, fromState)
         }
 
@@ -331,7 +331,13 @@ open class SimpleSurfaceShip(private val plugin: Plugin, blocks: ArrayList<Block
                     else -> throw IllegalStateException()
                 }
             }
-            it.teleport(newLoc, PlayerTeleportEvent.TeleportCause.PLUGIN)
+            if (Bukkit.getPlayer("Ninjoh")?.gameMode == GameMode.CREATIVE) {
+                val velo = it.velocity
+                it.teleport(newLoc, PlayerTeleportEvent.TeleportCause.PLUGIN)
+                it.velocity = velo
+            } else {
+                it.teleport(newLoc, PlayerTeleportEvent.TeleportCause.PLUGIN)
+            }
         }
 
         boundingBox.minX += relativeX
